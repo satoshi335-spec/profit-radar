@@ -12,7 +12,7 @@
   --green:#00e676; --green-dim:#00c85a; --green-glow:rgba(0,230,118,.15); --green-faint:rgba(0,230,118,.06);
   --red:#ff4444; --red-dim:rgba(255,68,68,.12);
   --yellow:#ffd740; --yellow-dim:rgba(255,215,64,.12);
-  --text:#e8edf0; --text2:#8a9ba8; --text3:#4a5c68;
+  --text:#f2f6f9; --text2:#c0d0da; --text3:#8faab8;
   --mono:'Space Mono',monospace;
   --sans:'Noto Sans JP',sans-serif;
 }
@@ -24,11 +24,11 @@ header{border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-i
 .logo{display:flex;align-items:center;gap:10px;}
 .logo-icon{width:32px;height:32px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;}
 .logo-text{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.05em;}
-.logo-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.logo-sub{font-size:15px;color:var(--text3);font-family:var(--mono);}
 .header-right{display:flex;gap:8px;align-items:center;}
-.rate-badge{font-family:var(--mono);font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:5px 12px;cursor:pointer;transition:all .2s;}
+.rate-badge{font-family:var(--mono);font-size:14px;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:5px 12px;cursor:pointer;transition:all .2s;}
 .rate-badge:hover{border-color:var(--green);color:var(--green);}
-.nav-btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:6px 16px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--text2);cursor:pointer;transition:all .2s;}
+.nav-btn{font-family:var(--sans);font-size:15px;font-weight:500;padding:6px 16px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--text2);cursor:pointer;transition:all .2s;}
 .nav-btn.active,.nav-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-faint);}
 
 main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
@@ -36,7 +36,7 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 
 /* Section card */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;}
-.card-label{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.card-label{font-family:var(--mono);font-size:15px;color:var(--green);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
 .card-label::after{content:'';flex:1;height:1px;background:var(--border);}
 
 /* Search */
@@ -52,36 +52,36 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 .btn-green:disabled{background:#1e2a22;color:var(--text3);cursor:not-allowed;}
 .btn-outline{background:none;border:1px solid var(--border2);color:var(--text2);}
 .btn-outline:hover{border-color:var(--green);color:var(--green);background:var(--green-faint);}
-.btn-sm{padding:7px 14px;font-size:13px;}
+.btn-sm{padding:7px 14px;font-size:15px;}
 
 /* Market links */
 .link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:14px;}
 .market-link{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;text-decoration:none;color:var(--text2);font-size:14px;transition:all .2s;}
 .market-link:hover{border-color:var(--green);color:var(--green);background:var(--green-faint);}
 .market-name{font-weight:700;font-size:14px;}
-.market-desc{font-size:11px;color:var(--text3);}
+.market-desc{font-size:15px;color:var(--text3);}
 
 /* Rate row */
 .rate-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;}
-.rate-row label{font-size:13px;color:var(--text2);font-family:var(--mono);}
+.rate-row label{font-size:15px;color:var(--text2);font-family:var(--mono);}
 .rate-row input{background:none;border:none;font-family:var(--mono);font-size:16px;color:var(--yellow);width:75px;outline:none;}
-.rate-auto{font-size:12px;color:var(--text3);cursor:pointer;text-decoration:underline;transition:color .2s;}
+.rate-auto{font-size:14px;color:var(--text3);cursor:pointer;text-decoration:underline;transition:color .2s;}
 .rate-auto:hover{color:var(--green);}
 
 /* Currency toggle */
 .cur-toggle{display:flex;gap:6px;margin-bottom:14px;}
-.cur-btn{padding:7px 18px;font-size:13px;font-weight:700;border-radius:6px;border:1px solid var(--border2);background:none;cursor:pointer;color:var(--text2);transition:all .2s;font-family:var(--sans);}
+.cur-btn{padding:7px 18px;font-size:15px;font-weight:700;border-radius:6px;border:1px solid var(--border2);background:none;cursor:pointer;color:var(--text2);transition:all .2s;font-family:var(--sans);}
 .cur-btn.active{background:var(--green);color:#000;border-color:var(--green);}
 
 /* Price grid */
 .price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
-.price-field label{display:block;font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;margin-bottom:6px;}
+.price-field label{display:block;font-size:14px;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;margin-bottom:6px;}
 .price-wrap{position:relative;}
 .price-wrap .sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:14px;color:var(--text3);pointer-events:none;}
 .price-wrap input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:11px 12px 11px 28px;font-family:var(--mono);font-size:17px;color:var(--green);outline:none;transition:border-color .2s;}
 .price-wrap input:focus{border-color:var(--green);}
-.price-wrap input::placeholder{color:var(--text3);font-size:13px;}
-.converted-hint{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px;min-height:16px;}
+.price-wrap input::placeholder{color:var(--text3);font-size:15px;}
+.converted-hint{font-size:14px;color:var(--text3);font-family:var(--mono);margin-top:4px;min-height:16px;}
 
 /* Verdict */
 .result-panel{display:none;}
@@ -97,12 +97,12 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 /* Metrics */
 .metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
 .metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
-.metric-label{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.1em;margin-bottom:6px;}
+.metric-label{font-size:15px;color:var(--text3);font-family:var(--mono);letter-spacing:.1em;margin-bottom:6px;}
 .metric-value{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1.1;}
 .metric-value.green{color:var(--green);}
 .metric-value.red{color:var(--red);}
 .metric-value.yellow{color:var(--yellow);}
-.metric-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+.metric-sub{font-size:14px;color:var(--text3);margin-top:4px;}
 
 /* Breakdown */
 .breakdown-row{display:flex;justify-content:space-between;padding:8px 0;font-size:15px;border-bottom:1px solid var(--border);}
@@ -115,11 +115,11 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 
 /* AI panel */
 .ai-box{background:var(--green-faint);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:18px 20px;margin-top:14px;}
-.ai-label{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:.12em;margin-bottom:10px;}
+.ai-label{font-family:var(--mono);font-size:15px;color:var(--green);letter-spacing:.12em;margin-bottom:10px;}
 .ai-text{font-size:15px;color:var(--text);line-height:1.8;}
 
 /* Loading */
-.loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);font-family:var(--mono);}
+.loading{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--text3);font-family:var(--mono);}
 .spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .hidden{display:none!important;}
@@ -128,7 +128,7 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 .stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
 .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
 .stat-val{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--green);}
-.stat-label{font-size:12px;color:var(--text3);margin-top:4px;}
+.stat-label{font-size:14px;color:var(--text3);margin-top:4px;}
 
 /* History */
 .history-list{display:flex;flex-direction:column;gap:10px;}
@@ -142,19 +142,19 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 .hcard-top{display:flex;align-items:flex-start;gap:12px;}
 .hcard-main{flex:1;}
 .hcard-name{font-weight:700;font-size:16px;margin-bottom:3px;}
-.hcard-meta{font-size:13px;color:var(--text3);font-family:var(--mono);}
+.hcard-meta{font-size:15px;color:var(--text3);font-family:var(--mono);}
 .hcard-right{text-align:right;}
 .hcard-profit{font-family:var(--mono);font-size:20px;font-weight:700;}
 .hcard-profit.green{color:var(--green);}
 .hcard-profit.red{color:var(--red);}
-.hcard-roi{font-size:12px;color:var(--text3);font-family:var(--mono);}
+.hcard-roi{font-size:14px;color:var(--text3);font-family:var(--mono);}
 .hcard-body{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:14px;color:var(--text2);line-height:1.7;display:none;}
 .hcard.open .hcard-body{display:block;}
 .hcard-breakdown{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin-top:10px;}
-.hb-item{background:var(--bg);border-radius:6px;padding:8px 12px;font-size:13px;}
-.hb-label{color:var(--text3);font-family:var(--mono);font-size:11px;margin-bottom:2px;}
+.hb-item{background:var(--bg);border-radius:6px;padding:8px 12px;font-size:15px;}
+.hb-label{color:var(--text3);font-family:var(--mono);font-size:15px;margin-bottom:2px;}
 .hb-val{font-family:var(--mono);font-weight:700;}
-.verdict-tag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px;margin-bottom:6px;}
+.verdict-tag{display:inline-block;font-family:var(--mono);font-size:15px;font-weight:700;padding:3px 10px;border-radius:4px;margin-bottom:6px;}
 .tag-buy{background:rgba(0,230,118,.2);color:var(--green);}
 .tag-caution{background:var(--yellow-dim);color:var(--yellow);}
 .tag-pass{background:var(--red-dim);color:var(--red);}
@@ -166,8 +166,8 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 .suggest-card{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:16px;cursor:pointer;transition:all .2s;}
 .suggest-card:hover{border-color:var(--green);background:var(--green-faint);}
 .suggest-name{font-weight:700;font-size:15px;margin-bottom:4px;}
-.suggest-reason{font-size:13px;color:var(--text2);line-height:1.5;}
-.suggest-roi{display:inline-block;font-family:var(--mono);font-size:12px;color:var(--green);background:var(--green-faint);border:1px solid rgba(0,230,118,.2);border-radius:4px;padding:3px 9px;margin-top:8px;}
+.suggest-reason{font-size:15px;color:var(--text2);line-height:1.5;}
+.suggest-roi{display:inline-block;font-family:var(--mono);font-size:14px;color:var(--green);background:var(--green-faint);border:1px solid rgba(0,230,118,.2);border-radius:4px;padding:3px 9px;margin-top:8px;}
 
 /* Toast */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:12px 22px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;font-family:var(--mono);}
@@ -215,6 +215,16 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
         onkeydown="if(event.key==='Enter')doSearch()">
       <button class="btn btn-green" onclick="doSearch()">🔍 リンクを生成</button>
     </div>
+    <!-- メモ欄 -->
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:14px;color:var(--text2);margin-bottom:6px;">📝 メモ（仕入れ先・状態など）</div>
+        <input type="text" id="searchMemo" class="search-input" style="font-size:15px;padding:10px 14px;"
+          placeholder="例：ハードオフ ジャンクコーナー 動作確認済み">
+      </div>
+      <button class="btn btn-outline" onclick="saveResearch()" style="padding:10px 18px;font-size:14px;">💾 リサーチ保存</button>
+    </div>
+
     <div class="link-grid" id="linkGrid" style="display:none;">
       <a id="lnkMercari" href="#" target="_blank" class="market-link">
         <span style="font-size:20px;">🛒</span>
@@ -249,12 +259,12 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
       <input type="text" id="fxRate" value="155" oninput="onRateChange()">
       <label>円</label>
       <span class="rate-auto" onclick="fetchRate()">🔄 自動取得</span>
-      <span id="rateStatus" style="font-size:12px;color:var(--text3);font-family:var(--mono);"></span>
+      <span id="rateStatus" style="font-size:14px;color:var(--text3);font-family:var(--mono);"></span>
     </div>
 
     <!-- 通貨切替（全価格共通） -->
     <div style="margin-bottom:16px;">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">価格の入力通貨：</div>
+      <div style="font-size:15px;color:var(--text2);margin-bottom:8px;">価格の入力通貨：</div>
       <div class="cur-toggle">
         <button class="cur-btn active" id="togJPY" onclick="setCurrency('JPY')">¥ 円で入力 → $換算を横表示</button>
         <button class="cur-btn" id="togUSD" onclick="setCurrency('USD')">$ ドルで入力 → ¥換算を横表示</button>
@@ -263,12 +273,12 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 
     <!-- 送料設定 -->
     <div style="margin-bottom:16px;">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">eBay出品価格に送料は含まれていますか？</div>
+      <div style="font-size:15px;color:var(--text2);margin-bottom:8px;">eBay出品価格に送料は含まれていますか？</div>
       <div class="cur-toggle">
         <button class="cur-btn" id="togShipExclude" onclick="setShipping('exclude')">📦 送料別（買い手負担）</button>
         <button class="cur-btn active" id="togShipInclude" onclick="setShipping('include')">✈️ 送料込み（売り手負担）</button>
       </div>
-      <div id="shippingNote" style="font-size:12px;color:var(--text3);margin-top:6px;font-family:var(--mono);">
+      <div id="shippingNote" style="font-size:14px;color:var(--text3);margin-top:6px;font-family:var(--mono);">
         → 送料込みの場合：利益計算に送料コストを含めます
       </div>
     </div>
@@ -309,7 +319,7 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
       <div class="price-field">
         <label>梱包重量 (g)</label>
         <div class="price-wrap">
-          <span class="sym" style="font-size:11px;left:10px;">g</span>
+          <span class="sym" style="font-size:15px;left:10px;">g</span>
           <input type="text" id="weightG" placeholder="500" oninput="calcAll()">
         </div>
       </div>
@@ -389,12 +399,20 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
 <!-- ══ HISTORY ══ -->
 <div class="view" id="viewHistory">
   <div class="stats-bar">
-    <div class="stat-box"><div class="stat-val" id="stTotal">0</div><div class="stat-label">調査件数</div></div>
+    <div class="stat-box"><div class="stat-val" id="stTotal">0</div><div class="stat-label">判定件数</div></div>
     <div class="stat-box"><div class="stat-val" id="stBuy">0</div><div class="stat-label">BUY判定</div></div>
     <div class="stat-box"><div class="stat-val" id="stAvgROI">—</div><div class="stat-label">平均ROI</div></div>
     <div class="stat-box"><div class="stat-val" id="stTotalProfit">—</div><div class="stat-label">利益合計見込み</div></div>
   </div>
-  <div class="history-list" id="historyList"></div>
+
+  <!-- タブ切替 -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <button class="cur-btn active" id="htabJudge" onclick="switchHistoryTab('judge')" style="font-size:15px;">🤖 AI判定履歴</button>
+    <button class="cur-btn" id="htabResearch" onclick="switchHistoryTab('research')" style="font-size:15px;">📝 リサーチ保存</button>
+  </div>
+
+  <div id="historyList"></div>
+  <div id="researchList" style="display:none;"></div>
 </div>
 
 <!-- ══ SUGGEST ══ -->
@@ -695,7 +713,7 @@ async function renderHistory(){
 
   const list=document.getElementById('historyList');
   if(!items.length){
-    list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div>まだ履歴がありません<br><span style="font-size:13px;color:var(--text3);">リサーチタブで商品を検索してください</span></div>`;
+    list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div>まだ履歴がありません<br><span style="font-size:15px;color:var(--text3);">リサーチタブで商品を検索してください</span></div>`;
     return;
   }
 
@@ -788,7 +806,7 @@ JSONのみ返答：{"suggestions":[{"name":"商品名","keyword":"eBay英語キ�
         <div class="suggest-reason">${s.reason}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
           <span class="suggest-roi">ROI ${s.roi_estimate}</span>
-          <span style="font-size:12px;color:var(--text3);">${riskLabel[s.risk]||''}</span>
+          <span style="font-size:14px;color:var(--text3);">${riskLabel[s.risk]||''}</span>
         </div>
       </div>`).join('');
   }catch(e){
@@ -802,6 +820,114 @@ function applySuggest(keyword){
   document.getElementById('searchInput').value=keyword;
   doSearch();
   showView('search');
+}
+
+// ── Research Save ──
+let researchDB = [];
+
+async function saveResearch(){
+  const item = document.getElementById('searchInput').value.trim();
+  if(!item){ showToast('❌ 商品名を入力してください'); return; }
+  const memo = document.getElementById('searchMemo').value.trim();
+  const costRaw = parseFloat(document.getElementById('costInput').value)||0;
+  const minRaw  = parseFloat(document.getElementById('ebayMin').value)||0;
+  const maxRaw  = parseFloat(document.getElementById('ebayMax').value)||0;
+  const targetRaw = parseFloat(document.getElementById('targetInput').value)||0;
+  const rate = getRate();
+
+  const rec = {
+    id: 'r_'+Date.now().toString(),
+    type: 'research',
+    item,
+    memo,
+    priceCurrency,
+    shippingMode,
+    costRaw, minRaw, maxRaw, targetRaw,
+    costJPY: priceCurrency==='JPY'?costRaw:Math.round(costRaw*rate),
+    minUSD:  priceCurrency==='USD'?minRaw:(minRaw/rate),
+    maxUSD:  priceCurrency==='USD'?maxRaw:(maxRaw/rate),
+    targetUSD: priceCurrency==='USD'?targetRaw:(targetRaw/rate),
+    fxRate: rate,
+    savedAt: new Date().toISOString(),
+  };
+  // 利益計算があれば付加
+  if(currentCalc){
+    rec.profit = currentCalc.profit;
+    rec.roi    = parseFloat(currentCalc.roi.toFixed(1));
+    rec.verdict = currentCalc.roi>=50?'buy':currentCalc.roi>=20?'caution':'pass';
+  }
+  await dbPut(rec);
+  showToast(`💾 「${item}」のリサーチを保存しました`);
+}
+
+function switchHistoryTab(tab){
+  const isJudge = tab==='judge';
+  document.getElementById('htabJudge').classList.toggle('active', isJudge);
+  document.getElementById('htabResearch').classList.toggle('active', !isJudge);
+  document.getElementById('historyList').style.display = isJudge?'':'none';
+  document.getElementById('researchList').style.display = isJudge?'none':'';
+  if(!isJudge) renderResearch();
+}
+
+async function renderResearch(){
+  const all = await dbGetAll();
+  const items = all.filter(i=>i.type==='research').sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+  const list = document.getElementById('researchList');
+  if(!items.length){
+    list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📝</div>保存したリサーチがありません<br><span style="font-size:14px;color:var(--text3);">商品名を入力して「💾 リサーチ保存」を押してください</span></div>`;
+    return;
+  }
+  const tagClass={buy:'tag-buy',caution:'tag-caution',pass:'tag-pass'};
+  const tagLabel={buy:'✅ BUY',caution:'⚠️ CAUTION',pass:'❌ PASS'};
+  list.innerHTML = items.map(r=>{
+    const date=new Date(r.savedAt).toLocaleDateString('ja-JP');
+    const time=new Date(r.savedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    const costStr=r.priceCurrency==='JPY'?`¥${r.costRaw?.toLocaleString()}`:`$${r.costRaw}`;
+    const targetStr=r.priceCurrency==='JPY'?`¥${r.targetRaw?.toLocaleString()}`:`$${r.targetRaw}`;
+    const verdictTag = r.verdict?`<span class="verdict-tag ${tagClass[r.verdict]||''}">${tagLabel[r.verdict]||''}</span>`:'';
+    const profitStr = r.profit!=null?`<span style="font-family:var(--mono);font-size:17px;font-weight:700;color:${r.profit>0?'var(--green)':'var(--red)'};">¥${Math.round(r.profit).toLocaleString()}</span> <span style="font-size:13px;color:var(--text2);">ROI ${r.roi}%</span>`:'';
+    return `
+    <div class="hcard" style="border-left:4px solid var(--border2);">
+      <div class="hcard-top">
+        <div class="hcard-main">
+          ${verdictTag}
+          <div class="hcard-name">${r.item}</div>
+          <div class="hcard-meta">${date} ${time}${r.memo?` ・ 📝 ${r.memo}`:''}</div>
+          ${r.costRaw||r.targetRaw?`<div style="margin-top:6px;font-size:14px;color:var(--text2);">仕入 ${costStr} → 出品 ${targetStr}（送料${r.shippingMode==='include'?'込':'別'}）</div>`:''}
+        </div>
+        <div style="text-align:right;">${profitStr}</div>
+        <button class="del-btn" onclick="deleteResearch('${r.id}')">🗑</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="loadResearch('${r.id}')">↩ 再リサーチ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteResearch(id){
+  await dbDelete(id);
+  renderResearch();
+  showToast('🗑 削除しました');
+}
+
+async function loadResearch(id){
+  const all = await dbGetAll();
+  const r = all.find(i=>i.id===id);
+  if(!r) return;
+  document.getElementById('searchInput').value = r.item;
+  document.getElementById('searchMemo').value = r.memo||'';
+  setCurrency(r.priceCurrency||'JPY');
+  setShipping(r.shippingMode||'include');
+  document.getElementById('costInput').value = r.costRaw||'';
+  document.getElementById('ebayMin').value   = r.minRaw||'';
+  document.getElementById('ebayMax').value   = r.maxRaw||'';
+  document.getElementById('targetInput').value = r.targetRaw||'';
+  if(r.fxRate) document.getElementById('fxRate').value = r.fxRate;
+  doSearch();
+  calcAll();
+  showView('search');
+  showToast(`↩ 「${r.item}」を読み込みました`);
 }
 
 // ── Toast ──
