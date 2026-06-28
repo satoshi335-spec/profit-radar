@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>利益レーダー — eBay仕入れ判定ツール</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0a0d0f;
+  --surface: #111518;
+  --surface2: #161b1f;
+  --border: #1e2529;
+  --border2: #252d33;
+  --green: #00e676;
+  --green-dim: #00c85a;
+  --green-glow: rgba(0,230,118,0.15);
+  --green-faint: rgba(0,230,118,0.06);
+  --red: #ff4444;
+  --red-dim: rgba(255,68,68,0.12);
+  --yellow: #ffd740;
+  --yellow-dim: rgba(255,215,64,0.12);
+  --text: #e8edf0;
+  --text2: #8a9ba8;
+  --text3: #4a5c68;
+  --mono: 'Space Mono', monospace;
+  --sans: 'Space Grotesk', 'Noto Sans JP', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  background: rgba(10,13,15,0.95);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-icon {
+  width: 28px; height: 28px;
+  background: var(--green);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.logo-text {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+.logo-sub {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+}
+.header-right { display: flex; gap: 8px; align-items: center; }
+.rate-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.rate-badge:hover { border-color: var(--green); color: var(--green); }
+.nav-btn {
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: none;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .2s;
+}
+.nav-btn.active, .nav-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-faint); }
+
+/* ── Layout ── */
+main { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Search Section ── */
+.search-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.search-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.search-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s;
+}
+.search-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-glow); }
+.search-input::placeholder { color: var(--text3); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn-green { background: var(--green); color: #000; }
+.btn-green:hover { background: var(--green-dim); }
+.btn-green:disabled { background: #1e2a22; color: var(--text3); cursor: not-allowed; }
+.btn-outline { background: none; border: 1px solid var(--border2); color: var(--text2); }
+.btn-outline:hover { border-color: var(--green); color: var(--green); background: var(--green-faint); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+/* ── Link Grid ── */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.market-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 13px;
+  transition: all .2s;
+}
+.market-link:hover { border-color: var(--green); color: var(--green); background: var(--green-faint); }
+.market-icon { font-size: 16px; }
+.market-name { font-weight: 500; }
+.market-desc { font-size: 10px; color: var(--text3); }
+.arrow { margin-left: auto; font-size: 11px; }
+
+/* ── Price Input Panel ── */
+.price-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.panel-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.price-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.price-field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.price-input-wrap { position: relative; }
+.price-input-wrap .currency {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text3);
+  pointer-events: none;
+}
+.price-field input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 10px 12px 10px 28px;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--green);
+  outline: none;
+  transition: border-color .2s;
+}
+.price-field input:focus { border-color: var(--green); }
+.price-field input::placeholder { color: var(--text3); font-size: 13px; }
+
+/* ── Rate Row ── */
+.rate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.rate-row label { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+.rate-row input {
+  background: none;
+  border: none;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--yellow);
+  width: 70px;
+  outline: none;
+}
+.rate-auto { font-size: 11px; color: var(--text3); cursor: pointer; text-decoration: underline; transition: color .2s; }
+.rate-auto:hover { color: var(--green); }
+
+/* ── Result Panel ── */
+.result-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  display: none;
+}
+.result-panel.show { display: block; }
+.result-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.verdict-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+.verdict-buy { background: rgba(0,230,118,0.2); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+.verdict-caution { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,215,64,0.3); }
+.verdict-pass { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,68,68,0.3); }
+.verdict-text { font-size: 14px; font-weight: 600; }
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+}
+.metric {
+  background: var(--surface);
+  padding: 18px 20px;
+}
+.metric-label { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: 0.1em; margin-bottom: 6px; }
+.metric-value { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+.metric-value.green { color: var(--green); }
+.metric-value.red { color: var(--red); }
+.metric-value.yellow { color: var(--yellow); }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.breakdown {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.breakdown-row:last-child { border-bottom: none; }
+.breakdown-row .label { color: var(--text2); }
+.breakdown-row .val { font-family: var(--mono); }
+.breakdown-row.total { padding-top: 10px; font-weight: 600; font-size: 14px; }
+.breakdown-row.total .val { color: var(--green); }
+.breakdown-row.minus .val { color: var(--red); }
+
+/* ── AI Judge ── */
+.ai-panel {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--green-faint);
+}
+.ai-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+}
+.ai-text { font-size: 14px; color: var(--text); line-height: 1.7; }
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+
+/* ── Fee breakdown toggle ── */
+.fee-toggle {
+  font-size: 11px;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: var(--mono);
+  text-decoration: underline;
+  margin-top: 8px;
+  display: inline-block;
+}
+.fee-toggle:hover { color: var(--green); }
+
+/* ── History ── */
+.history-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-empty {
+  text-align: center;
+  padding: 48px;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.history-empty-icon { font-size: 36px; margin-bottom: 10px; }
+.history-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.history-card:hover { border-color: var(--border2); }
+.history-card.buy { border-left: 3px solid var(--green); }
+.history-card.caution { border-left: 3px solid var(--yellow); }
+.history-card.pass { border-left: 3px solid var(--red); }
+.history-name { font-weight: 500; font-size: 14px; flex: 1; }
+.history-meta { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+.history-profit {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: right;
+}
+.history-profit.green { color: var(--green); }
+.history-profit.red { color: var(--red); }
+.history-roi { font-size: 10px; color: var(--text3); font-family: var(--mono); text-align: right; }
+.del-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  transition: color .2s;
+}
+.del-btn:hover { color: var(--red); }
+
+/* ── Suggest Panel ── */
+.suggest-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.suggest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.suggest-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.suggest-card:hover { border-color: var(--green); background: var(--green-faint); }
+.suggest-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.suggest-reason { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.suggest-roi {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+  background: var(--green-faint);
+  border: 1px solid rgba(0,230,118,0.2);
+  border-radius: 3px;
+  padding: 2px 7px;
+  margin-top: 8px;
+}
+
+/* ── Stats bar ── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+}
+.stat-val { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--green); }
+.stat-label { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+  font-family: var(--mono);
+}
+.toast.show { opacity: 1; }
+
+@media (max-width: 600px) {
+  header { padding: 0 14px; }
+  main { padding: 16px 12px 60px; }
+  .price-grid { grid-template-columns: 1fr 1fr; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .logo-sub { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    <div>
+      <div class="logo-text">PROFIT RADAR</div>
+      <div class="logo-sub">eBay仕入れ判定ツール</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="rate-badge" onclick="showRateModal()">
+      💱 <span id="headerRate">155</span>円/USD
+    </div>
+    <button class="nav-btn active" id="btnSearch" onclick="showView('search')">🔍 リサーチ</button>
+    <button class="nav-btn" id="btnHistory" onclick="showView('history')">📋 履歴</button>
+    <button class="nav-btn" id="btnSuggest" onclick="showView('suggest')">💡 提案</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ SEARCH VIEW ══ -->
+<div class="view active" id="viewSearch">
+
+  <!-- Search Hero -->
+  <div class="search-hero">
+    <div class="search-label">📡 商品リサーチ</div>
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchInput"
+        placeholder="例：SIGMA 35mm F1.4 Art Canon"
+        onkeydown="if(event.key==='Enter')doSearch()">
+      <button class="btn btn-green" onclick="doSearch()">検索リンクを生成</button>
+    </div>
+
+    <!-- Market Links -->
+    <div class="link-grid" id="linkGrid" style="display:none;">
+      <a id="lnkMercari" href="#" target="_blank" class="market-link">
+        <span class="market-icon">🛒</span>
+        <div><div class="market-name">メルカリ</div><div class="market-desc">売れた価格を確認</div></div>
+        <span class="arrow">↗</span>
+      </a>
+      <a id="lnkYahoo" href="#" target="_blank" class="market-link">
+        <span class="market-icon">🔨</span>
+        <div><div class="market-name">ヤフオク</div><div class="market-desc">落札相場を確認</div></div>
+        <span class="arrow">↗</span>
+      </a>
+      <a id="lnkEbaySold" href="#" target="_blank" class="market-link">
+        <span class="market-icon">🌐</span>
+        <div><div class="market-name">eBay Sold Items</div><div class="market-desc">売れた価格のみ表示</div></div>
+        <span class="arrow">↗</span>
+      </a>
+      <a id="lnkEbayActive" href="#" target="_blank" class="market-link">
+        <span class="market-icon">📦</span>
+        <div><div class="market-name">eBay 出品中</div><div class="market-desc">競合の価格を確認</div></div>
+        <span class="arrow">↗</span>
+      </a>
+      <a id="lnkKeepa" href="#" target="_blank" class="market-link">
+        <span class="market-icon">📈</span>
+        <div><div class="market-name">Keepa</div><div class="market-desc">Amazon価格履歴</div></div>
+        <span class="arrow">↗</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Price Input -->
+  <div class="price-panel">
+    <div class="panel-title">価格入力</div>
+
+    <div class="rate-row">
+      <label>為替レート</label>
+      <span style="color:var(--text3);font-family:var(--mono);font-size:12px;">1 USD =</span>
+      <input type="text" id="fxRate" value="155" oninput="updateRate()">
+      <span style="color:var(--text3);font-family:var(--mono);font-size:12px;">円</span>
+      <span class="rate-auto" onclick="fetchRate()">🔄 自動取得</span>
+      <span id="rateStatus" style="font-size:11px;color:var(--text3);font-family:var(--mono);"></span>
+    </div>
+
+    <div class="price-grid">
+      <div class="price-field">
+        <label>仕入れ価格（日本）</label>
+        <div class="price-input-wrap">
+          <span class="currency">¥</span>
+          <input type="text" id="costJPY" placeholder="15000" oninput="calcAll()">
+        </div>
+      </div>
+      <div class="price-field">
+        <label>eBay最低落札価格</label>
+        <div class="price-input-wrap">
+          <span class="currency">$</span>
+          <input type="text" id="ebayMin" placeholder="120" oninput="calcAll()">
+        </div>
+      </div>
+      <div class="price-field">
+        <label>eBay最高落札価格</label>
+        <div class="price-input-wrap">
+          <span class="currency">$</span>
+          <input type="text" id="ebayMax" placeholder="200" oninput="calcAll()">
+        </div>
+      </div>
+      <div class="price-field">
+        <label>狙う出品価格</label>
+        <div class="price-input-wrap">
+          <span class="currency">$</span>
+          <input type="text" id="targetUSD" placeholder="160" oninput="calcAll()">
+        </div>
+      </div>
+      <div class="price-field">
+        <label>梱包重量（g）</label>
+        <div class="price-input-wrap">
+          <span class="currency" style="font-size:10px;left:10px;">g</span>
+          <input type="text" id="weightG" placeholder="500" oninput="calcAll()">
+        </div>
+      </div>
+      <div class="price-field">
+        <label>送り先</label>
+        <select id="destRegion" onchange="calcAll()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;">
+          <option value="us">🇺🇸 アメリカ</option>
+          <option value="eu">🇪🇺 ヨーロッパ</option>
+          <option value="au">🇦🇺 オーストラリア</option>
+          <option value="asia">🌏 東南アジア</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-green" onclick="judgeAndSave()" id="judgeBtn" disabled>
+      🤖 AIで仕入れ判定する
+    </button>
+  </div>
+
+  <!-- Result Panel -->
+  <div class="result-panel" id="resultPanel">
+    <div class="result-header">
+      <div class="verdict">
+        <span class="verdict-badge" id="verdictBadge">—</span>
+        <span class="verdict-text" id="verdictText">—</span>
+      </div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3);" id="resultItem">—</span>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">NET PROFIT</div>
+        <div class="metric-value" id="mProfit">—</div>
+        <div class="metric-sub" id="mProfitSub">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">ROI</div>
+        <div class="metric-value" id="mROI">—</div>
+        <div class="metric-sub">投資対効果</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">MARGIN</div>
+        <div class="metric-value" id="mMargin">—</div>
+        <div class="metric-sub">粗利率</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">SHIP COST</div>
+        <div class="metric-value" id="mShip">—</div>
+        <div class="metric-sub" id="mShipMethod">—</div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <div class="panel-title">内訳</div>
+      <div class="breakdown-row"><span class="label">販売価格</span><span class="val" id="bSale">—</span></div>
+      <div class="breakdown-row minus"><span class="label">eBay手数料（13.25%）</span><span class="val" id="bFee">—</span></div>
+      <div class="breakdown-row minus"><span class="label">Payoneer手数料（3%）</span><span class="val" id="bPay">—</span></div>
+      <div class="breakdown-row minus"><span class="label">国際送料</span><span class="val" id="bShip">—</span></div>
+      <div class="breakdown-row minus"><span class="label">仕入れ価格</span><span class="val" id="bCost">—</span></div>
+      <div class="breakdown-row total"><span class="label">手取り利益</span><span class="val" id="bProfit">—</span></div>
+    </div>
+
+    <div class="ai-panel">
+      <div class="ai-label">▸ AI判定コメント</div>
+      <div id="aiLoading" class="loading hidden"><div class="spinner"></div>分析中...</div>
+      <div id="aiText" class="ai-text"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ HISTORY VIEW ══ -->
+<div class="view" id="viewHistory">
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-box"><div class="stat-val" id="stTotal">0</div><div class="stat-label">調査件数</div></div>
+    <div class="stat-box"><div class="stat-val" id="stBuy">0</div><div class="stat-label">BUY判定</div></div>
+    <div class="stat-box"><div class="stat-val" id="stAvgROI">—</div><div class="stat-label">平均ROI</div></div>
+    <div class="stat-box"><div class="stat-val" id="stTotalProfit">—</div><div class="stat-label">合計利益見込み</div></div>
+  </div>
+  <div class="history-grid" id="historyGrid"></div>
+</div>
+
+<!-- ══ SUGGEST VIEW ══ -->
+<div class="view" id="viewSuggest">
+  <div class="suggest-panel">
+    <div class="panel-title">AI おすすめ仕入れカテゴリ</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">現在のトレンドと利益率をもとにAIが提案します。クリックするとリサーチ画面に移動します。</div>
+    <button class="btn btn-green" onclick="loadSuggestions()" id="suggestBtn">🤖 AIに提案してもらう</button>
+    <div id="suggestLoading" class="loading hidden" style="margin-top:12px;"><div class="spinner"></div>分析中...</div>
+    <div class="suggest-grid" id="suggestGrid"></div>
+  </div>
+</div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DB ──
+let db;
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('profitRadarDB', 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore('searches', { keyPath: 'id' });
+    };
+    req.onsuccess = e => { db = e.target.result; res(); };
+    req.onerror = rej;
+  });
+}
+function dbPut(item) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('searches', 'readwrite');
+    tx.objectStore('searches').put(item).onsuccess = () => res();
+    tx.onerror = rej;
+  });
+}
+function dbGetAll() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('searches', 'readonly');
+    tx.objectStore('searches').getAll().onsuccess = e => res(e.target.result);
+  });
+}
+function dbDelete(id) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction('searches', 'readwrite');
+    tx.objectStore('searches').delete(id).onsuccess = () => res();
+  });
+}
+
+// ── State ──
+let currentCalc = null;
+
+// ── View ──
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
+  if (v === 'history') renderHistory();
+}
+
+// ── Search ──
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const enc = encodeURIComponent(q);
+  document.getElementById('lnkMercari').href = `https://mercari.com/jp/search/?keyword=${enc}&status=on_sale`;
+  document.getElementById('lnkYahoo').href = `https://auctions.yahoo.co.jp/search/search?p=${enc}&va=${enc}&is_postage_mode=1&dest=1&abatch=1`;
+  document.getElementById('lnkEbaySold').href = `https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1&_sop=13`;
+  document.getElementById('lnkEbayActive').href = `https://www.ebay.com/sch/i.html?_nkw=${enc}&_sop=15`;
+  document.getElementById('lnkKeepa').href = `https://keepa.com/#search/1-${enc}`;
+  document.getElementById('linkGrid').style.display = 'grid';
+  document.getElementById('judgeBtn').disabled = false;
+  showToast('🔍 各サイトのリンクを生成しました');
+}
+
+// ── Rate ──
+function getRate() { return parseFloat(document.getElementById('fxRate').value) || 155; }
+function updateRate() {
+  document.getElementById('headerRate').textContent = document.getElementById('fxRate').value;
+  calcAll();
+}
+async function fetchRate() {
+  document.getElementById('rateStatus').textContent = '取得中…';
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await res.json();
+    const rate = Math.round(data.rates?.JPY);
+    if (rate) {
+      document.getElementById('fxRate').value = rate;
+      document.getElementById('headerRate').textContent = rate;
+      document.getElementById('rateStatus').textContent = `✅ ${rate}円`;
+      calcAll();
+    }
+  } catch { document.getElementById('rateStatus').textContent = '取得失敗'; }
+}
+
+// ── Shipping ──
+const shipRates = {
+  us: { ems: { base: 1400, rate: 0.0045, label: 'EMS' }, epkt: { base: 900, rate: 0.003, label: 'eパケット' } },
+  eu: { ems: { base: 1600, rate: 0.005, label: 'EMS' }, epkt: { base: 950, rate: 0.0032, label: 'eパケット' } },
+  au: { ems: { base: 1300, rate: 0.004, label: 'EMS' }, epkt: { base: 850, rate: 0.0028, label: 'eパケット' } },
+  asia: { ems: { base: 1000, rate: 0.003, label: 'EMS' }, epkt: { base: 700, rate: 0.0022, label: 'eパケット' } },
+};
+function calcShip(weightG, region) {
+  const w = parseInt(weightG) || 400;
+  const r = shipRates[region] || shipRates.us;
+  const ems = Math.round(r.ems.base + r.ems.rate * w);
+  const epkt = Math.round(r.epkt.base + r.epkt.rate * w);
+  return { ems, epkt, recommended: w > 1000 ? ems : epkt, label: w > 1000 ? r.ems.label : r.epkt.label };
+}
+
+// ── Calc ──
+function calcAll() {
+  const rate = getRate();
+  const cost = parseFloat(document.getElementById('costJPY').value) || 0;
+  const target = parseFloat(document.getElementById('targetUSD').value) || 0;
+  const weight = document.getElementById('weightG').value;
+  const region = document.getElementById('destRegion').value;
+
+  if (!cost || !target) { currentCalc = null; return; }
+
+  const saleJPY = target * rate;
+  const fee = saleJPY * 0.1325;
+  const payFee = saleJPY * 0.03;
+  const ship = calcShip(weight, region);
+  const shipCost = ship.recommended;
+  const profit = saleJPY - fee - payFee - shipCost - cost;
+  const roi = cost > 0 ? (profit / cost * 100) : 0;
+  const margin = saleJPY > 0 ? (profit / saleJPY * 100) : 0;
+
+  currentCalc = { cost, target, saleJPY, fee, payFee, shipCost, ship, profit, roi, margin, rate };
+
+  // Update result panel
+  document.getElementById('resultPanel').classList.add('show');
+  const item = document.getElementById('searchInput').value || '—';
+  document.getElementById('resultItem').textContent = item;
+
+  // Verdict
+  let verdict, vClass;
+  if (roi >= 50 && profit > 0) { verdict = '✅ BUY'; vClass = 'verdict-buy'; }
+  else if (roi >= 20 && profit > 0) { verdict = '⚠️ CAUTION'; vClass = 'verdict-caution'; }
+  else { verdict = '❌ PASS'; vClass = 'verdict-pass'; }
+  const vBadge = document.getElementById('verdictBadge');
+  vBadge.textContent = verdict;
+  vBadge.className = 'verdict-badge ' + vClass;
+  document.getElementById('verdictText').textContent =
+    roi >= 50 ? `ROI ${roi.toFixed(0)}% — 仕入れを推奨します` :
+    roi >= 20 ? `ROI ${roi.toFixed(0)}% — 慎重に判断してください` :
+    `ROI ${roi.toFixed(0)}% — 利益が薄いです`;
+
+  // Metrics
+  const pEl = document.getElementById('mProfit');
+  pEl.textContent = `¥${Math.round(profit).toLocaleString()}`;
+  pEl.className = 'metric-value ' + (profit > 0 ? 'green' : 'red');
+  document.getElementById('mProfitSub').textContent = `$${target} → ¥${Math.round(saleJPY).toLocaleString()}`;
+
+  const rEl = document.getElementById('mROI');
+  rEl.textContent = `${roi.toFixed(0)}%`;
+  rEl.className = 'metric-value ' + (roi >= 50 ? 'green' : roi >= 20 ? 'yellow' : 'red');
+
+  const mgEl = document.getElementById('mMargin');
+  mgEl.textContent = `${margin.toFixed(0)}%`;
+  mgEl.className = 'metric-value ' + (margin >= 30 ? 'green' : margin >= 15 ? 'yellow' : 'red');
+
+  document.getElementById('mShip').textContent = `¥${shipCost.toLocaleString()}`;
+  document.getElementById('mShipMethod').textContent = ship.label;
+
+  // Breakdown
+  document.getElementById('bSale').textContent = `$${target} / ¥${Math.round(saleJPY).toLocaleString()}`;
+  document.getElementById('bFee').textContent = `-¥${Math.round(fee).toLocaleString()}`;
+  document.getElementById('bPay').textContent = `-¥${Math.round(payFee).toLocaleString()}`;
+  document.getElementById('bShip').textContent = `-¥${shipCost.toLocaleString()}`;
+  document.getElementById('bCost').textContent = `-¥${cost.toLocaleString()}`;
+  const bpEl = document.getElementById('bProfit');
+  bpEl.textContent = `¥${Math.round(profit).toLocaleString()}`;
+  bpEl.style.color = profit > 0 ? 'var(--green)' : 'var(--red)';
+}
+
+// ── AI Judge ── 
+async function judgeAndSave() {
+  if (!currentCalc) { calcAll(); if (!currentCalc) { showToast('❌ 価格を入力してください'); return; } }
+
+  const item = document.getElementById('searchInput').value || '商品';
+  const { cost, target, profit, roi, margin, shipCost, ship } = currentCalc;
+  const ebayMin = document.getElementById('ebayMin').value;
+  const ebayMax = document.getElementById('ebayMax').value;
+
+  document.getElementById('aiText').textContent = '';
+  document.getElementById('aiLoading').classList.remove('hidden');
+  document.getElementById('resultPanel').classList.add('show');
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: 'あなたはeBay輸出転売の専門家です。簡潔で実践的なアドバイスを日本語で返してください。',
+        messages: [{
+          role: 'user',
+          content: `以下の仕入れ案件を分析してください。
+
+商品: ${item}
+仕入れ価格: ¥${cost.toLocaleString()}
+eBay落札相場: $${ebayMin}〜$${ebayMax}
+出品予定価格: $${target}
+利益: ¥${Math.round(profit).toLocaleString()}
+ROI: ${roi.toFixed(0)}%
+粗利率: ${margin.toFixed(0)}%
+送料: ¥${shipCost.toLocaleString()}（${ship.label}）
+
+以下の観点で100〜150文字程度で判定してください：
+1. この案件の総合評価（BUY/CAUTION/PASSとその理由）
+2. リスクや注意点
+3. 価格交渉や利益改善のヒント（あれば）`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content[0].text;
+    document.getElementById('aiText').textContent = text;
+
+    // Save to DB
+    await dbPut({
+      id: Date.now().toString(),
+      item,
+      cost,
+      target,
+      profit: Math.round(profit),
+      roi: parseFloat(roi.toFixed(1)),
+      margin: parseFloat(margin.toFixed(1)),
+      verdict: roi >= 50 ? 'buy' : roi >= 20 ? 'caution' : 'pass',
+      aiComment: text,
+      savedAt: new Date().toISOString(),
+    });
+    showToast('💾 履歴に保存しました');
+  } catch(e) {
+    document.getElementById('aiText').textContent = 'AI判定に失敗しました。計算結果をご確認ください。';
+  }
+  document.getElementById('aiLoading').classList.add('hidden');
+}
+
+// ── History ──
+async function renderHistory() {
+  const items = await dbGetAll();
+  items.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+  // Stats
+  document.getElementById('stTotal').textContent = items.length;
+  const buys = items.filter(i => i.verdict === 'buy');
+  document.getElementById('stBuy').textContent = buys.length;
+  const avgROI = items.length ? (items.reduce((s, i) => s + i.roi, 0) / items.length).toFixed(0) : '—';
+  document.getElementById('stAvgROI').textContent = items.length ? avgROI + '%' : '—';
+  const totalProfit = items.reduce((s, i) => s + (i.profit || 0), 0);
+  document.getElementById('stTotalProfit').textContent = items.length ? '¥' + totalProfit.toLocaleString() : '—';
+
+  const grid = document.getElementById('historyGrid');
+  if (!items.length) {
+    grid.innerHTML = `<div class="history-empty"><div class="history-empty-icon">📭</div>まだ履歴がありません<br><span style="font-size:11px;">リサーチタブで商品を検索してください</span></div>`;
+    return;
+  }
+  grid.innerHTML = items.map(item => `
+    <div class="history-card ${item.verdict}" onclick="loadFromHistory('${item.id}')">
+      <div style="flex:1;">
+        <div class="history-name">${item.item}</div>
+        <div class="history-meta">仕入 ¥${item.cost?.toLocaleString()} → $${item.target} ・ ${new Date(item.savedAt).toLocaleDateString('ja-JP')}</div>
+      </div>
+      <div>
+        <div class="history-profit ${item.profit > 0 ? 'green' : 'red'}">¥${item.profit?.toLocaleString()}</div>
+        <div class="history-roi">ROI ${item.roi}%</div>
+      </div>
+      <button class="del-btn" onclick="event.stopPropagation();deleteHistory('${item.id}')">🗑</button>
+    </div>
+  `).join('');
+}
+
+async function loadFromHistory(id) {
+  const items = await dbGetAll();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('searchInput').value = item.item;
+  document.getElementById('costJPY').value = item.cost;
+  document.getElementById('targetUSD').value = item.target;
+  doSearch();
+  calcAll();
+  showView('search');
+}
+
+async function deleteHistory(id) {
+  await dbDelete(id);
+  renderHistory();
+  showToast('🗑 削除しました');
+}
+
+// ── Suggestions ──
+async function loadSuggestions() {
+  document.getElementById('suggestLoading').classList.remove('hidden');
+  document.getElementById('suggestGrid').innerHTML = '';
+  document.getElementById('suggestBtn').disabled = true;
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: 'eBay輸出転売の専門家です。JSONのみ返答。マークダウン不要。',
+        messages: [{
+          role: 'user',
+          content: `今の市場で日本からeBayへの輸出転売で利益が出やすい商品カテゴリを6つ提案してください。
+以下のJSONのみ返答してください：
+{"suggestions":[{"name":"商品名・カテゴリ","keyword":"eBay検索キーワード（英語）","reason":"おすすめ理由（日本語40文字以内）","roi_estimate":"ROI目安（例：60-120%）","risk":"low/medium/high"}]}`
+        }]
+      })
+    });
+    const data = await res.json();
+    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g, '').trim());
+    const riskLabel = { low: '🟢 低リスク', medium: '🟡 中リスク', high: '🔴 高リスク' };
+    document.getElementById('suggestGrid').innerHTML = parsed.suggestions.map(s => `
+      <div class="suggest-card" onclick="applySuggest('${s.keyword.replace(/'/g,"\\'")}')">
+        <div class="suggest-name">${s.name}</div>
+        <div class="suggest-reason">${s.reason}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <span class="suggest-roi">ROI ${s.roi_estimate}</span>
+          <span style="font-size:11px;color:var(--text3);">${riskLabel[s.risk] || ''}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('suggestGrid').innerHTML = '<div style="color:var(--text3);font-size:13px;padding:16px;">提案の取得に失敗しました。</div>';
+  }
+  document.getElementById('suggestLoading').classList.add('hidden');
+  document.getElementById('suggestBtn').disabled = false;
+}
+
+function applySuggest(keyword) {
+  document.getElementById('searchInput').value = keyword;
+  doSearch();
+  showView('search');
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Init ──
+openDB();
+</script>
+</body>
+</html>
