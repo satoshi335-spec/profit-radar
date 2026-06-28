@@ -252,12 +252,24 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
       <span id="rateStatus" style="font-size:12px;color:var(--text3);font-family:var(--mono);"></span>
     </div>
 
-    <!-- 通貨切替 -->
-    <div style="margin-bottom:8px;">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">仕入れ価格の入力通貨：</div>
+    <!-- 通貨切替（全価格共通） -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">価格の入力通貨：</div>
       <div class="cur-toggle">
-        <button class="cur-btn active" id="togJPY" onclick="setCurrency('JPY')">¥ 円で入力</button>
-        <button class="cur-btn" id="togUSD" onclick="setCurrency('USD')">$ ドルで入力</button>
+        <button class="cur-btn active" id="togJPY" onclick="setCurrency('JPY')">¥ 円で入力 → $換算を横表示</button>
+        <button class="cur-btn" id="togUSD" onclick="setCurrency('USD')">$ ドルで入力 → ¥換算を横表示</button>
+      </div>
+    </div>
+
+    <!-- 送料設定 -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">eBay出品価格に送料は含まれていますか？</div>
+      <div class="cur-toggle">
+        <button class="cur-btn" id="togShipExclude" onclick="setShipping('exclude')">📦 送料別（買い手負担）</button>
+        <button class="cur-btn active" id="togShipInclude" onclick="setShipping('include')">✈️ 送料込み（売り手負担）</button>
+      </div>
+      <div id="shippingNote" style="font-size:12px;color:var(--text3);margin-top:6px;font-family:var(--mono);">
+        → 送料込みの場合：利益計算に送料コストを含めます
       </div>
     </div>
 
@@ -271,26 +283,26 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
         <div class="converted-hint" id="costHint"></div>
       </div>
       <div class="price-field">
-        <label>eBay 最低落札価格 ($)</label>
+        <label id="minLabel">eBay 最低落札価格</label>
         <div class="price-wrap">
-          <span class="sym">$</span>
-          <input type="text" id="ebayMin" placeholder="120" oninput="calcAll()">
+          <span class="sym" id="minSym">¥</span>
+          <input type="text" id="ebayMin" placeholder="18000" oninput="calcAll()">
         </div>
         <div class="converted-hint" id="minHint"></div>
       </div>
       <div class="price-field">
-        <label>eBay 最高落札価格 ($)</label>
+        <label id="maxLabel">eBay 最高落札価格</label>
         <div class="price-wrap">
-          <span class="sym">$</span>
-          <input type="text" id="ebayMax" placeholder="200" oninput="calcAll()">
+          <span class="sym" id="maxSym">¥</span>
+          <input type="text" id="ebayMax" placeholder="30000" oninput="calcAll()">
         </div>
         <div class="converted-hint" id="maxHint"></div>
       </div>
       <div class="price-field">
-        <label>狙う出品価格 ($)</label>
+        <label id="targetLabel">狙う出品価格</label>
         <div class="price-wrap">
-          <span class="sym">$</span>
-          <input type="text" id="targetUSD" placeholder="160" oninput="calcAll()">
+          <span class="sym" id="targetSym">¥</span>
+          <input type="text" id="targetInput" placeholder="25000" oninput="calcAll()">
         </div>
         <div class="converted-hint" id="targetHint"></div>
       </div>
@@ -420,7 +432,8 @@ function dbDelete(id){return new Promise((res,rej)=>{const tx=db.transaction('se
 
 // ── State ──
 let currentCalc=null;
-let costCurrency='JPY'; // JPY or USD
+let priceCurrency='JPY'; // 全価格共通の入力通貨
+let shippingMode='include'; // include=送料込み / exclude=送料別
 
 // ── View ──
 function showView(v){
@@ -466,27 +479,64 @@ async function fetchRate(){
   }catch{document.getElementById('rateStatus').textContent='取得失敗';}
 }
 
-// ── Currency toggle ──
+// ── Currency toggle（全価格共通）──
 function setCurrency(cur){
-  costCurrency=cur;
+  priceCurrency=cur;
   const isJPY=cur==='JPY';
-  document.getElementById('costSym').textContent=isJPY?'¥':'$';
-  document.getElementById('costLabel').textContent=isJPY?'仕入れ価格（日本）':'仕入れ価格（USD）';
+  const sym=isJPY?'¥':'$';
+  // 全シンボル更新
+  ['costSym','minSym','maxSym','targetSym'].forEach(id=>document.getElementById(id).textContent=sym);
+  // ラベル更新
+  document.getElementById('costLabel').textContent=isJPY?'仕入れ価格（円）':'仕入れ価格（USD）';
+  document.getElementById('minLabel').textContent=isJPY?'eBay 最低落札（円換算）':'eBay 最低落札（USD）';
+  document.getElementById('maxLabel').textContent=isJPY?'eBay 最高落札（円換算）':'eBay 最高落札（USD）';
+  document.getElementById('targetLabel').textContent=isJPY?'狙う出品価格（円換算）':'狙う出品価格（USD）';
+  // placeholder更新
   document.getElementById('costInput').placeholder=isJPY?'15000':'100';
+  document.getElementById('ebayMin').placeholder=isJPY?'18000':'120';
+  document.getElementById('ebayMax').placeholder=isJPY?'30000':'200';
+  document.getElementById('targetInput').placeholder=isJPY?'25000':'160';
+  // ボタン
   document.getElementById('togJPY').classList.toggle('active',isJPY);
   document.getElementById('togUSD').classList.toggle('active',!isJPY);
-  document.getElementById('costInput').value='';
-  document.getElementById('costHint').textContent='';
+  // 入力クリア
+  ['costInput','ebayMin','ebayMax','targetInput'].forEach(id=>document.getElementById(id).value='');
+  ['costHint','minHint','maxHint','targetHint'].forEach(id=>document.getElementById(id).textContent='');
   calcAll();
 }
 
-function getCostJPY(){
-  const val=parseFloat(document.getElementById('costInput').value)||0;
+// 入力値→JPY変換
+function toJPY(val){
   const rate=getRate();
-  return costCurrency==='JPY'?val:val*rate;
+  return priceCurrency==='JPY'?val:val*rate;
+}
+// 入力値→USD変換
+function toUSD(val){
+  const rate=getRate();
+  return priceCurrency==='USD'?val:val/rate;
+}
+// 換算ヒント文字列
+function hint(val){
+  if(!val) return '';
+  const rate=getRate();
+  return priceCurrency==='JPY'
+    ?`→ $${(val/rate).toFixed(2)}`
+    :`→ ¥${Math.round(val*rate).toLocaleString()}`;
 }
 
-// ── Shipping ──
+// ── Shipping mode ──
+function setShipping(mode){
+  shippingMode=mode;
+  document.getElementById('togShipInclude').classList.toggle('active',mode==='include');
+  document.getElementById('togShipExclude').classList.toggle('active',mode==='exclude');
+  document.getElementById('shippingNote').textContent=
+    mode==='include'
+    ?'→ 送料込みの場合：利益計算に送料コストを含めます'
+    :'→ 送料別の場合：送料は買い手が払うので利益計算から除外します';
+  calcAll();
+}
+
+// ── Shipping cost ──
 const shipRates={
   us:{ems:{base:1400,rate:.0045,label:'EMS'},epkt:{base:900,rate:.003,label:'eパケット'}},
   eu:{ems:{base:1600,rate:.005,label:'EMS'},epkt:{base:950,rate:.0032,label:'eパケット'}},
@@ -503,37 +553,38 @@ function calcShip(w,region){
 // ── Calc ──
 function calcAll(){
   const rate=getRate();
-  const cost=getCostJPY();
-  const target=parseFloat(document.getElementById('targetUSD').value)||0;
-  const ebayMin=parseFloat(document.getElementById('ebayMin').value)||0;
-  const ebayMax=parseFloat(document.getElementById('ebayMax').value)||0;
+  const costRaw=parseFloat(document.getElementById('costInput').value)||0;
+  const minRaw=parseFloat(document.getElementById('ebayMin').value)||0;
+  const maxRaw=parseFloat(document.getElementById('ebayMax').value)||0;
+  const targetRaw=parseFloat(document.getElementById('targetInput').value)||0;
   const weight=parseInt(document.getElementById('weightG').value)||400;
   const region=document.getElementById('destRegion').value;
 
-  // 換算ヒント更新
-  const inputVal=parseFloat(document.getElementById('costInput').value)||0;
-  if(inputVal){
-    document.getElementById('costHint').textContent=costCurrency==='JPY'
-      ?`→ $${(inputVal/rate).toFixed(2)} USD`
-      :`→ ¥${Math.round(inputVal*rate).toLocaleString()} 円`;
-  }
-  if(ebayMin) document.getElementById('minHint').textContent=`→ ¥${Math.round(ebayMin*rate).toLocaleString()}`;
-  if(ebayMax) document.getElementById('maxHint').textContent=`→ ¥${Math.round(ebayMax*rate).toLocaleString()}`;
-  if(target)  document.getElementById('targetHint').textContent=`→ ¥${Math.round(target*rate).toLocaleString()}`;
+  // 換算ヒント
+  if(costRaw) document.getElementById('costHint').textContent=hint(costRaw);
+  if(minRaw)  document.getElementById('minHint').textContent=hint(minRaw);
+  if(maxRaw)  document.getElementById('maxHint').textContent=hint(maxRaw);
+  if(targetRaw) document.getElementById('targetHint').textContent=hint(targetRaw);
 
-  if(!cost||!target){currentCalc=null;return;}
+  const cost=toJPY(costRaw);
+  const targetUSD=toUSD(targetRaw);
+  const ebayMinUSD=toUSD(minRaw);
+  const ebayMaxUSD=toUSD(maxRaw);
 
-  const saleJPY=target*rate;
+  if(!cost||!targetRaw){currentCalc=null;return;}
+
+  const saleJPY=targetUSD*rate;
   const fee=saleJPY*.1325;
   const payFee=saleJPY*.03;
   const ship=calcShip(weight,region);
-  const profit=saleJPY-fee-payFee-ship.cost-cost;
+  // 送料込みなら送料を利益から引く、送料別なら引かない
+  const shipDeduct=shippingMode==='include'?ship.cost:0;
+  const profit=saleJPY-fee-payFee-shipDeduct-cost;
   const roi=cost>0?profit/cost*100:0;
   const margin=saleJPY>0?profit/saleJPY*100:0;
 
-  currentCalc={cost,target,saleJPY,fee,payFee,ship,profit,roi,margin,rate,ebayMin,ebayMax,weight,region};
+  currentCalc={cost,targetUSD,saleJPY,fee,payFee,ship,shipDeduct,profit,roi,margin,rate,ebayMinUSD,ebayMaxUSD,weight,region};
 
-  // Show result
   document.getElementById('resultPanel').classList.add('show');
 
   // Verdict
@@ -541,13 +592,13 @@ function calcAll(){
   vBar.className='verdict-bar '+(roi>=50?'buy':roi>=20?'caution':'pass');
   document.getElementById('verdictIcon').textContent=roi>=50?'✅':roi>=20?'⚠️':'❌';
   document.getElementById('verdictTitle').textContent=roi>=50?'BUY — 仕入れを推奨':roi>=20?'CAUTION — 慎重に判断':'PASS — 利益が薄い';
-  document.getElementById('verdictSub').textContent=`ROI ${roi.toFixed(0)}% ・ 利益 ¥${Math.round(profit).toLocaleString()} ・ 粗利率 ${margin.toFixed(0)}%`;
+  document.getElementById('verdictSub').textContent=`ROI ${roi.toFixed(0)}% ・ 利益 ¥${Math.round(profit).toLocaleString()} ・ 粗利率 ${margin.toFixed(0)}% ・ 送料${shippingMode==='include'?'込み':'別'}`;
 
   // Metrics
   const pEl=document.getElementById('mProfit');
   pEl.textContent=`¥${Math.round(profit).toLocaleString()}`;
   pEl.className='metric-value '+(profit>0?'green':'red');
-  document.getElementById('mProfitSub').textContent=`$${target} → ¥${Math.round(saleJPY).toLocaleString()}`;
+  document.getElementById('mProfitSub').textContent=`$${targetUSD.toFixed(2)} → ¥${Math.round(saleJPY).toLocaleString()}`;
 
   const rEl=document.getElementById('mROI');
   rEl.textContent=`${roi.toFixed(0)}%`;
@@ -558,13 +609,13 @@ function calcAll(){
   mgEl.className='metric-value '+(margin>=30?'green':margin>=15?'yellow':'red');
 
   document.getElementById('mShip').textContent=`¥${ship.cost.toLocaleString()}`;
-  document.getElementById('mShipMethod').textContent=ship.label;
+  document.getElementById('mShipMethod').textContent=ship.label+(shippingMode==='exclude'?' (買い手負担)':'');
 
   // Breakdown
-  document.getElementById('bSale').textContent=`$${target} (¥${Math.round(saleJPY).toLocaleString()})`;
+  document.getElementById('bSale').textContent=`$${targetUSD.toFixed(2)} (¥${Math.round(saleJPY).toLocaleString()})`;
   document.getElementById('bFee').textContent=`-¥${Math.round(fee).toLocaleString()}`;
   document.getElementById('bPay').textContent=`-¥${Math.round(payFee).toLocaleString()}`;
-  document.getElementById('bShip').textContent=`-¥${ship.cost.toLocaleString()}`;
+  document.getElementById('bShip').textContent=shippingMode==='include'?`-¥${ship.cost.toLocaleString()}`:`¥0（買い手負担）`;
   document.getElementById('bCost').textContent=`-¥${Math.round(cost).toLocaleString()}`;
   const bpEl=document.getElementById('bProfit');
   bpEl.textContent=`¥${Math.round(profit).toLocaleString()}`;
@@ -575,7 +626,7 @@ function calcAll(){
 async function judgeAndSave(){
   if(!currentCalc){calcAll();if(!currentCalc){showToast('❌ 価格を入力してください');return;}}
   const item=document.getElementById('searchInput').value||'商品';
-  const {cost,target,profit,roi,margin,ship,ebayMin,ebayMax}=currentCalc;
+  const {cost,targetUSD,profit,roi,margin,ship,shipDeduct,ebayMinUSD,ebayMaxUSD}=currentCalc;
 
   document.getElementById('aiText').textContent='';
   document.getElementById('aiLoading').classList.remove('hidden');
@@ -590,12 +641,12 @@ async function judgeAndSave(){
         messages:[{role:'user',content:`案件分析：
 商品: ${item}
 仕入れ: ¥${Math.round(cost).toLocaleString()}
-eBay相場: $${ebayMin}〜$${ebayMax}
-出品価格: $${target}
+eBay相場: $${ebayMinUSD.toFixed(0)}〜$${ebayMaxUSD.toFixed(0)}
+出品価格: $${targetUSD.toFixed(2)}（送料${shippingMode==='include'?'込み':'別'}）
 利益: ¥${Math.round(profit).toLocaleString()}
 ROI: ${roi.toFixed(0)}%
 粗利率: ${margin.toFixed(0)}%
-送料: ¥${ship.cost.toLocaleString()}（${ship.label}）
+送料: ¥${ship.cost.toLocaleString()}（${ship.label}）・${shippingMode==='include'?'売り手負担':'買い手負担'}
 
 100〜150文字で：①総合評価 ②リスク ③改善ヒント`}]
       })
@@ -608,9 +659,11 @@ ROI: ${roi.toFixed(0)}%
       id:Date.now().toString(),
       item,
       cost:Math.round(cost),
-      costCurrency,
-      target,
-      ebayMin,ebayMax,
+      priceCurrency,
+      targetUSD:parseFloat(targetUSD.toFixed(2)),
+      ebayMinUSD:parseFloat(ebayMinUSD.toFixed(2)),
+      ebayMaxUSD:parseFloat(ebayMaxUSD.toFixed(2)),
+      shippingMode,
       profit:Math.round(profit),
       roi:parseFloat(roi.toFixed(1)),
       margin:parseFloat(margin.toFixed(1)),
@@ -690,12 +743,15 @@ async function loadFromHistory(id){
   const item=items.find(i=>i.id===id);
   if(!item)return;
   document.getElementById('searchInput').value=item.item;
-  if(item.costCurrency==='USD') setCurrency('USD');
-  else setCurrency('JPY');
+  // 通貨設定（保存時のものを復元）
+  setCurrency(item.priceCurrency||'JPY');
+  setShipping(item.shippingMode||'include');
+  const rate=getRate();
+  const isJPY=(item.priceCurrency||'JPY')==='JPY';
   document.getElementById('costInput').value=item.cost;
-  document.getElementById('ebayMin').value=item.ebayMin||'';
-  document.getElementById('ebayMax').value=item.ebayMax||'';
-  document.getElementById('targetUSD').value=item.target;
+  document.getElementById('ebayMin').value=isJPY?Math.round(item.ebayMinUSD*rate):item.ebayMinUSD||'';
+  document.getElementById('ebayMax').value=isJPY?Math.round(item.ebayMaxUSD*rate):item.ebayMaxUSD||'';
+  document.getElementById('targetInput').value=isJPY?Math.round(item.targetUSD*rate):item.targetUSD||'';
   doSearch();
   calcAll();
   showView('search');
