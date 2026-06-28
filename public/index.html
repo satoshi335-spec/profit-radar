@@ -334,9 +334,12 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
       </div>
     </div>
 
-    <button class="btn btn-green" onclick="judgeAndSave()" id="judgeBtn" disabled>
-      🤖 AIで仕入れ判定する
-    </button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-green" onclick="judgeAndSave()" id="judgeBtn" disabled>
+        🤖 AIで仕入れ判定する
+      </button>
+      <button class="btn btn-outline" onclick="resetForm()">🔄 リセット</button>
+    </div>
   </div>
 
   <!-- 結果 -->
@@ -820,6 +823,37 @@ function applySuggest(keyword){
   document.getElementById('searchInput').value=keyword;
   doSearch();
   showView('search');
+}
+
+// ── Reset ──
+function resetForm(){
+  // 商品名・メモ
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchMemo').value = '';
+  // 価格入力欄（レートはそのまま）
+  ['costInput','ebayMin','ebayMax','targetInput','weightG'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  // 換算ヒントクリア
+  ['costHint','minHint','maxHint','targetHint'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = '';
+  });
+  // 送り先リセット
+  document.getElementById('destRegion').value = 'us';
+  // 検索リンク非表示
+  document.getElementById('linkGrid').style.display = 'none';
+  // 判定ボタン無効化
+  document.getElementById('judgeBtn').disabled = true;
+  // 結果パネル非表示
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('aiText').textContent = '';
+  // 通貨・送料設定をデフォルトに戻す
+  setCurrency('JPY');
+  setShipping('include');
+  currentCalc = null;
+  showToast('🔄 リセットしました（レートはそのまま）');
 }
 
 // ── Research Save ──
