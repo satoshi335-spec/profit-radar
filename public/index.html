@@ -3,534 +3,183 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>利益レーダー — eBay仕入れ判定ツール</title>
+<title>利益レーダー — eBay仕入れ判定</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 :root {
-  --bg: #0a0d0f;
-  --surface: #111518;
-  --surface2: #161b1f;
-  --border: #1e2529;
-  --border2: #252d33;
-  --green: #00e676;
-  --green-dim: #00c85a;
-  --green-glow: rgba(0,230,118,0.15);
-  --green-faint: rgba(0,230,118,0.06);
-  --red: #ff4444;
-  --red-dim: rgba(255,68,68,0.12);
-  --yellow: #ffd740;
-  --yellow-dim: rgba(255,215,64,0.12);
-  --text: #e8edf0;
-  --text2: #8a9ba8;
-  --text3: #4a5c68;
-  --mono: 'Space Mono', monospace;
-  --sans: 'Space Grotesk', 'Noto Sans JP', sans-serif;
+  --bg:#0a0d0f; --surface:#111518; --surface2:#161b1f;
+  --border:#1e2529; --border2:#252d33;
+  --green:#00e676; --green-dim:#00c85a; --green-glow:rgba(0,230,118,.15); --green-faint:rgba(0,230,118,.06);
+  --red:#ff4444; --red-dim:rgba(255,68,68,.12);
+  --yellow:#ffd740; --yellow-dim:rgba(255,215,64,.12);
+  --text:#e8edf0; --text2:#8a9ba8; --text3:#4a5c68;
+  --mono:'Space Mono',monospace;
+  --sans:'Noto Sans JP',sans-serif;
 }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:400;line-height:1.6;min-height:100vh;font-size:16px;}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+/* Header */
+header{border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;background:rgba(10,13,15,.97);backdrop-filter:blur(12px);z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.05em;}
+.logo-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.header-right{display:flex;gap:8px;align-items:center;}
+.rate-badge{font-family:var(--mono);font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:5px 12px;cursor:pointer;transition:all .2s;}
+.rate-badge:hover{border-color:var(--green);color:var(--green);}
+.nav-btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:6px 16px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--text2);cursor:pointer;transition:all .2s;}
+.nav-btn.active,.nav-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-faint);}
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  font-weight: 400;
-  line-height: 1.6;
-  min-height: 100vh;
-}
+main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
+.view{display:none;} .view.active{display:block;}
 
-/* ── Header ── */
-header {
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 56px;
-  position: sticky;
-  top: 0;
-  background: rgba(10,13,15,0.95);
-  backdrop-filter: blur(12px);
-  z-index: 100;
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.logo-icon {
-  width: 28px; height: 28px;
-  background: var(--green);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-.logo-text {
-  font-family: var(--mono);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: var(--text);
-}
-.logo-sub {
-  font-size: 10px;
-  color: var(--text3);
-  font-family: var(--mono);
-  letter-spacing: 0.1em;
-}
-.header-right { display: flex; gap: 8px; align-items: center; }
-.rate-badge {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text2);
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: all .2s;
-}
-.rate-badge:hover { border-color: var(--green); color: var(--green); }
-.nav-btn {
-  font-family: var(--sans);
-  font-size: 12px;
-  padding: 5px 14px;
-  border-radius: 5px;
-  border: 1px solid var(--border2);
-  background: none;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all .2s;
-}
-.nav-btn.active, .nav-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-faint); }
+/* Section card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px;}
+.card-label{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.card-label::after{content:'';flex:1;height:1px;background:var(--border);}
 
-/* ── Layout ── */
-main { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
-.view { display: none; }
-.view.active { display: block; }
+/* Search */
+.search-row{display:flex;gap:10px;flex-wrap:wrap;}
+.search-input{flex:1;min-width:220px;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:13px 16px;font-family:var(--sans);font-size:16px;color:var(--text);outline:none;transition:border-color .2s;}
+.search-input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow);}
+.search-input::placeholder{color:var(--text3);}
 
-/* ── Search Section ── */
-.search-hero {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 20px;
-}
-.search-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--green);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-.search-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.search-input {
-  flex: 1;
-  min-width: 200px;
-  background: var(--bg);
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-family: var(--sans);
-  font-size: 15px;
-  color: var(--text);
-  outline: none;
-  transition: border-color .2s;
-}
-.search-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-glow); }
-.search-input::placeholder { color: var(--text3); }
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 11px 20px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 500;
-  transition: all .2s;
-  white-space: nowrap;
-}
-.btn-green { background: var(--green); color: #000; }
-.btn-green:hover { background: var(--green-dim); }
-.btn-green:disabled { background: #1e2a22; color: var(--text3); cursor: not-allowed; }
-.btn-outline { background: none; border: 1px solid var(--border2); color: var(--text2); }
-.btn-outline:hover { border-color: var(--green); color: var(--green); background: var(--green-faint); }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:12px 22px;border-radius:8px;border:none;cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:700;transition:all .2s;white-space:nowrap;}
+.btn-green{background:var(--green);color:#000;}
+.btn-green:hover{background:var(--green-dim);}
+.btn-green:disabled{background:#1e2a22;color:var(--text3);cursor:not-allowed;}
+.btn-outline{background:none;border:1px solid var(--border2);color:var(--text2);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);background:var(--green-faint);}
+.btn-sm{padding:7px 14px;font-size:13px;}
 
-/* ── Link Grid ── */
-.link-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 8px;
-  margin-top: 16px;
-}
-.market-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
-  text-decoration: none;
-  color: var(--text2);
-  font-size: 13px;
-  transition: all .2s;
-}
-.market-link:hover { border-color: var(--green); color: var(--green); background: var(--green-faint); }
-.market-icon { font-size: 16px; }
-.market-name { font-weight: 500; }
-.market-desc { font-size: 10px; color: var(--text3); }
-.arrow { margin-left: auto; font-size: 11px; }
+/* Market links */
+.link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:14px;}
+.market-link{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;text-decoration:none;color:var(--text2);font-size:14px;transition:all .2s;}
+.market-link:hover{border-color:var(--green);color:var(--green);background:var(--green-faint);}
+.market-name{font-weight:700;font-size:14px;}
+.market-desc{font-size:11px;color:var(--text3);}
 
-/* ── Price Input Panel ── */
-.price-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 20px;
-}
-.panel-title {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text2);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.panel-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-.price-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.price-field label {
-  display: block;
-  font-size: 11px;
-  color: var(--text3);
-  font-family: var(--mono);
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-}
-.price-input-wrap { position: relative; }
-.price-input-wrap .currency {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--text3);
-  pointer-events: none;
-}
-.price-field input {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border2);
-  border-radius: 6px;
-  padding: 10px 12px 10px 28px;
-  font-family: var(--mono);
-  font-size: 15px;
-  color: var(--green);
-  outline: none;
-  transition: border-color .2s;
-}
-.price-field input:focus { border-color: var(--green); }
-.price-field input::placeholder { color: var(--text3); font-size: 13px; }
+/* Rate row */
+.rate-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;}
+.rate-row label{font-size:13px;color:var(--text2);font-family:var(--mono);}
+.rate-row input{background:none;border:none;font-family:var(--mono);font-size:16px;color:var(--yellow);width:75px;outline:none;}
+.rate-auto{font-size:12px;color:var(--text3);cursor:pointer;text-decoration:underline;transition:color .2s;}
+.rate-auto:hover{color:var(--green);}
 
-/* ── Rate Row ── */
-.rate-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-  padding: 10px 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-.rate-row label { font-size: 11px; color: var(--text3); font-family: var(--mono); }
-.rate-row input {
-  background: none;
-  border: none;
-  font-family: var(--mono);
-  font-size: 14px;
-  color: var(--yellow);
-  width: 70px;
-  outline: none;
-}
-.rate-auto { font-size: 11px; color: var(--text3); cursor: pointer; text-decoration: underline; transition: color .2s; }
-.rate-auto:hover { color: var(--green); }
+/* Currency toggle */
+.cur-toggle{display:flex;gap:6px;margin-bottom:14px;}
+.cur-btn{padding:7px 18px;font-size:13px;font-weight:700;border-radius:6px;border:1px solid var(--border2);background:none;cursor:pointer;color:var(--text2);transition:all .2s;font-family:var(--sans);}
+.cur-btn.active{background:var(--green);color:#000;border-color:var(--green);}
 
-/* ── Result Panel ── */
-.result-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 20px;
-  display: none;
-}
-.result-panel.show { display: block; }
-.result-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.verdict {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.verdict-badge {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 4px 12px;
-  border-radius: 4px;
-}
-.verdict-buy { background: rgba(0,230,118,0.2); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
-.verdict-caution { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,215,64,0.3); }
-.verdict-pass { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,68,68,0.3); }
-.verdict-text { font-size: 14px; font-weight: 600; }
+/* Price grid */
+.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
+.price-field label{display:block;font-size:12px;color:var(--text3);font-family:var(--mono);letter-spacing:.06em;margin-bottom:6px;}
+.price-wrap{position:relative;}
+.price-wrap .sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:14px;color:var(--text3);pointer-events:none;}
+.price-wrap input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:11px 12px 11px 28px;font-family:var(--mono);font-size:17px;color:var(--green);outline:none;transition:border-color .2s;}
+.price-wrap input:focus{border-color:var(--green);}
+.price-wrap input::placeholder{color:var(--text3);font-size:13px;}
+.converted-hint{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px;min-height:16px;}
 
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 1px;
-  background: var(--border);
-}
-.metric {
-  background: var(--surface);
-  padding: 18px 20px;
-}
-.metric-label { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: 0.1em; margin-bottom: 6px; }
-.metric-value { font-family: var(--mono); font-size: 22px; font-weight: 700; }
-.metric-value.green { color: var(--green); }
-.metric-value.red { color: var(--red); }
-.metric-value.yellow { color: var(--yellow); }
-.metric-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+/* Verdict */
+.result-panel{display:none;}
+.result-panel.show{display:block;}
+.verdict-bar{display:flex;align-items:center;gap:12px;padding:16px 22px;border-radius:10px;margin-bottom:14px;}
+.verdict-bar.buy{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);}
+.verdict-bar.caution{background:var(--yellow-dim);border:1px solid rgba(255,215,64,.3);}
+.verdict-bar.pass{background:var(--red-dim);border:1px solid rgba(255,68,68,.3);}
+.verdict-icon{font-size:28px;}
+.verdict-title{font-size:20px;font-weight:700;}
+.verdict-sub{font-size:14px;color:var(--text2);margin-top:2px;}
 
-.breakdown {
-  padding: 16px 24px;
-  border-top: 1px solid var(--border);
-}
-.breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 0;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border);
-}
-.breakdown-row:last-child { border-bottom: none; }
-.breakdown-row .label { color: var(--text2); }
-.breakdown-row .val { font-family: var(--mono); }
-.breakdown-row.total { padding-top: 10px; font-weight: 600; font-size: 14px; }
-.breakdown-row.total .val { color: var(--green); }
-.breakdown-row.minus .val { color: var(--red); }
+/* Metrics */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.metric-label{font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.1em;margin-bottom:6px;}
+.metric-value{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1.1;}
+.metric-value.green{color:var(--green);}
+.metric-value.red{color:var(--red);}
+.metric-value.yellow{color:var(--yellow);}
+.metric-sub{font-size:12px;color:var(--text3);margin-top:4px;}
 
-/* ── AI Judge ── */
-.ai-panel {
-  padding: 20px 24px;
-  border-top: 1px solid var(--border);
-  background: var(--green-faint);
-}
-.ai-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--green);
-  letter-spacing: 0.12em;
-  margin-bottom: 10px;
-}
-.ai-text { font-size: 14px; color: var(--text); line-height: 1.7; }
-.loading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text3);
-  font-family: var(--mono);
-}
-.spinner {
-  width: 14px; height: 14px;
-  border: 2px solid var(--border2);
-  border-top-color: var(--green);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.hidden { display: none !important; }
+/* Breakdown */
+.breakdown-row{display:flex;justify-content:space-between;padding:8px 0;font-size:15px;border-bottom:1px solid var(--border);}
+.breakdown-row:last-child{border-bottom:none;}
+.breakdown-row .lbl{color:var(--text2);}
+.breakdown-row .val{font-family:var(--mono);font-weight:700;}
+.breakdown-row.minus .val{color:var(--red);}
+.breakdown-row.total{padding-top:12px;font-size:17px;font-weight:700;}
+.breakdown-row.total .val{color:var(--green);}
 
-/* ── Fee breakdown toggle ── */
-.fee-toggle {
-  font-size: 11px;
-  color: var(--text3);
-  cursor: pointer;
-  font-family: var(--mono);
-  text-decoration: underline;
-  margin-top: 8px;
-  display: inline-block;
-}
-.fee-toggle:hover { color: var(--green); }
+/* AI panel */
+.ai-box{background:var(--green-faint);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:18px 20px;margin-top:14px;}
+.ai-label{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:.12em;margin-bottom:10px;}
+.ai-text{font-size:15px;color:var(--text);line-height:1.8;}
 
-/* ── History ── */
-.history-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.history-empty {
-  text-align: center;
-  padding: 48px;
-  color: var(--text3);
-  font-family: var(--mono);
-  font-size: 13px;
-}
-.history-empty-icon { font-size: 36px; margin-bottom: 10px; }
-.history-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  cursor: pointer;
-  transition: border-color .2s;
-}
-.history-card:hover { border-color: var(--border2); }
-.history-card.buy { border-left: 3px solid var(--green); }
-.history-card.caution { border-left: 3px solid var(--yellow); }
-.history-card.pass { border-left: 3px solid var(--red); }
-.history-name { font-weight: 500; font-size: 14px; flex: 1; }
-.history-meta { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
-.history-profit {
-  font-family: var(--mono);
-  font-size: 16px;
-  font-weight: 700;
-  text-align: right;
-}
-.history-profit.green { color: var(--green); }
-.history-profit.red { color: var(--red); }
-.history-roi { font-size: 10px; color: var(--text3); font-family: var(--mono); text-align: right; }
-.del-btn {
-  background: none;
-  border: none;
-  color: var(--text3);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px;
-  transition: color .2s;
-}
-.del-btn:hover { color: var(--red); }
+/* Loading */
+.loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);font-family:var(--mono);}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.hidden{display:none!important;}
 
-/* ── Suggest Panel ── */
-.suggest-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 20px;
-}
-.suggest-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px;
-  margin-top: 14px;
-}
-.suggest-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all .2s;
-}
-.suggest-card:hover { border-color: var(--green); background: var(--green-faint); }
-.suggest-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-.suggest-reason { font-size: 12px; color: var(--text2); line-height: 1.5; }
-.suggest-roi {
-  display: inline-block;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--green);
-  background: var(--green-faint);
-  border: 1px solid rgba(0,230,118,0.2);
-  border-radius: 3px;
-  padding: 2px 7px;
-  margin-top: 8px;
-}
+/* Stats */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.stat-val{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--green);}
+.stat-label{font-size:12px;color:var(--text3);margin-top:4px;}
 
-/* ── Stats bar ── */
-.stats-bar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.stat-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px 16px;
-  text-align: center;
-}
-.stat-val { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--green); }
-.stat-label { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+/* History */
+.history-list{display:flex;flex-direction:column;gap:10px;}
+.history-empty{text-align:center;padding:56px;color:var(--text3);font-size:15px;}
+.history-empty-icon{font-size:44px;margin-bottom:12px;}
+.hcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;cursor:pointer;transition:border-color .2s;}
+.hcard:hover{border-color:var(--border2);}
+.hcard.buy{border-left:4px solid var(--green);}
+.hcard.caution{border-left:4px solid var(--yellow);}
+.hcard.pass{border-left:4px solid var(--red);}
+.hcard-top{display:flex;align-items:flex-start;gap:12px;}
+.hcard-main{flex:1;}
+.hcard-name{font-weight:700;font-size:16px;margin-bottom:3px;}
+.hcard-meta{font-size:13px;color:var(--text3);font-family:var(--mono);}
+.hcard-right{text-align:right;}
+.hcard-profit{font-family:var(--mono);font-size:20px;font-weight:700;}
+.hcard-profit.green{color:var(--green);}
+.hcard-profit.red{color:var(--red);}
+.hcard-roi{font-size:12px;color:var(--text3);font-family:var(--mono);}
+.hcard-body{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:14px;color:var(--text2);line-height:1.7;display:none;}
+.hcard.open .hcard-body{display:block;}
+.hcard-breakdown{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin-top:10px;}
+.hb-item{background:var(--bg);border-radius:6px;padding:8px 12px;font-size:13px;}
+.hb-label{color:var(--text3);font-family:var(--mono);font-size:11px;margin-bottom:2px;}
+.hb-val{font-family:var(--mono);font-weight:700;}
+.verdict-tag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px;margin-bottom:6px;}
+.tag-buy{background:rgba(0,230,118,.2);color:var(--green);}
+.tag-caution{background:var(--yellow-dim);color:var(--yellow);}
+.tag-pass{background:var(--red-dim);color:var(--red);}
+.del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px 8px;transition:color .2s;flex-shrink:0;}
+.del-btn:hover{color:var(--red);}
 
-/* ── Toast ── */
-.toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--text);
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 13px;
-  z-index: 999;
-  opacity: 0;
-  transition: opacity .3s;
-  pointer-events: none;
-  font-family: var(--mono);
-}
-.toast.show { opacity: 1; }
+/* Suggest */
+.suggest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:14px;}
+.suggest-card{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:16px;cursor:pointer;transition:all .2s;}
+.suggest-card:hover{border-color:var(--green);background:var(--green-faint);}
+.suggest-name{font-weight:700;font-size:15px;margin-bottom:4px;}
+.suggest-reason{font-size:13px;color:var(--text2);line-height:1.5;}
+.suggest-roi{display:inline-block;font-family:var(--mono);font-size:12px;color:var(--green);background:var(--green-faint);border:1px solid rgba(0,230,118,.2);border-radius:4px;padding:3px 9px;margin-top:8px;}
 
-@media (max-width: 600px) {
-  header { padding: 0 14px; }
-  main { padding: 16px 12px 60px; }
-  .price-grid { grid-template-columns: 1fr 1fr; }
-  .metrics-grid { grid-template-columns: 1fr 1fr; }
-  .stats-bar { grid-template-columns: 1fr 1fr; }
-  .logo-sub { display: none; }
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:12px 22px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;font-family:var(--mono);}
+.toast.show{opacity:1;}
+
+@media(max-width:600px){
+  header{padding:0 12px;}
+  .logo-sub{display:none;}
+  .stats-bar{grid-template-columns:1fr 1fr;}
+  .metrics-grid{grid-template-columns:1fr 1fr;}
+  .price-grid{grid-template-columns:1fr 1fr;}
+  main{padding:14px 10px 60px;}
 }
 </style>
 </head>
@@ -545,9 +194,7 @@ main { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
     </div>
   </div>
   <div class="header-right">
-    <div class="rate-badge" onclick="showRateModal()">
-      💱 <span id="headerRate">155</span>円/USD
-    </div>
+    <div class="rate-badge">💱 <span id="headerRate">155</span>円/USD</div>
     <button class="nav-btn active" id="btnSearch" onclick="showView('search')">🔍 リサーチ</button>
     <button class="nav-btn" id="btnHistory" onclick="showView('history')">📋 履歴</button>
     <button class="nav-btn" id="btnSuggest" onclick="showView('suggest')">💡 提案</button>
@@ -556,101 +203,107 @@ main { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
 
 <main>
 
-<!-- ══ SEARCH VIEW ══ -->
+<!-- ══ SEARCH ══ -->
 <div class="view active" id="viewSearch">
 
-  <!-- Search Hero -->
-  <div class="search-hero">
-    <div class="search-label">📡 商品リサーチ</div>
+  <!-- 商品検索 -->
+  <div class="card">
+    <div class="card-label">📡 商品名を入力</div>
     <div class="search-row">
       <input type="text" class="search-input" id="searchInput"
         placeholder="例：SIGMA 35mm F1.4 Art Canon"
         onkeydown="if(event.key==='Enter')doSearch()">
-      <button class="btn btn-green" onclick="doSearch()">検索リンクを生成</button>
+      <button class="btn btn-green" onclick="doSearch()">🔍 リンクを生成</button>
     </div>
-
-    <!-- Market Links -->
     <div class="link-grid" id="linkGrid" style="display:none;">
       <a id="lnkMercari" href="#" target="_blank" class="market-link">
-        <span class="market-icon">🛒</span>
+        <span style="font-size:20px;">🛒</span>
         <div><div class="market-name">メルカリ</div><div class="market-desc">売れた価格を確認</div></div>
-        <span class="arrow">↗</span>
+        <span style="margin-left:auto;">↗</span>
       </a>
       <a id="lnkYahoo" href="#" target="_blank" class="market-link">
-        <span class="market-icon">🔨</span>
+        <span style="font-size:20px;">🔨</span>
         <div><div class="market-name">ヤフオク</div><div class="market-desc">落札相場を確認</div></div>
-        <span class="arrow">↗</span>
+        <span style="margin-left:auto;">↗</span>
       </a>
       <a id="lnkEbaySold" href="#" target="_blank" class="market-link">
-        <span class="market-icon">🌐</span>
-        <div><div class="market-name">eBay Sold Items</div><div class="market-desc">売れた価格のみ表示</div></div>
-        <span class="arrow">↗</span>
+        <span style="font-size:20px;">🌐</span>
+        <div><div class="market-name">eBay 売れた価格</div><div class="market-desc">Sold Items フィルター</div></div>
+        <span style="margin-left:auto;">↗</span>
       </a>
       <a id="lnkEbayActive" href="#" target="_blank" class="market-link">
-        <span class="market-icon">📦</span>
+        <span style="font-size:20px;">📦</span>
         <div><div class="market-name">eBay 出品中</div><div class="market-desc">競合の価格を確認</div></div>
-        <span class="arrow">↗</span>
-      </a>
-      <a id="lnkKeepa" href="#" target="_blank" class="market-link">
-        <span class="market-icon">📈</span>
-        <div><div class="market-name">Keepa</div><div class="market-desc">Amazon価格履歴</div></div>
-        <span class="arrow">↗</span>
+        <span style="margin-left:auto;">↗</span>
       </a>
     </div>
   </div>
 
-  <!-- Price Input -->
-  <div class="price-panel">
-    <div class="panel-title">価格入力</div>
+  <!-- 価格入力 -->
+  <div class="card">
+    <div class="card-label">💴 価格を入力</div>
 
+    <!-- 為替レート -->
     <div class="rate-row">
-      <label>為替レート</label>
-      <span style="color:var(--text3);font-family:var(--mono);font-size:12px;">1 USD =</span>
-      <input type="text" id="fxRate" value="155" oninput="updateRate()">
-      <span style="color:var(--text3);font-family:var(--mono);font-size:12px;">円</span>
+      <label>為替レート　1 USD =</label>
+      <input type="text" id="fxRate" value="155" oninput="onRateChange()">
+      <label>円</label>
       <span class="rate-auto" onclick="fetchRate()">🔄 自動取得</span>
-      <span id="rateStatus" style="font-size:11px;color:var(--text3);font-family:var(--mono);"></span>
+      <span id="rateStatus" style="font-size:12px;color:var(--text3);font-family:var(--mono);"></span>
+    </div>
+
+    <!-- 通貨切替 -->
+    <div style="margin-bottom:8px;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">仕入れ価格の入力通貨：</div>
+      <div class="cur-toggle">
+        <button class="cur-btn active" id="togJPY" onclick="setCurrency('JPY')">¥ 円で入力</button>
+        <button class="cur-btn" id="togUSD" onclick="setCurrency('USD')">$ ドルで入力</button>
+      </div>
     </div>
 
     <div class="price-grid">
       <div class="price-field">
-        <label>仕入れ価格（日本）</label>
-        <div class="price-input-wrap">
-          <span class="currency">¥</span>
-          <input type="text" id="costJPY" placeholder="15000" oninput="calcAll()">
+        <label id="costLabel">仕入れ価格（日本）</label>
+        <div class="price-wrap">
+          <span class="sym" id="costSym">¥</span>
+          <input type="text" id="costInput" placeholder="15000" oninput="calcAll()">
         </div>
+        <div class="converted-hint" id="costHint"></div>
       </div>
       <div class="price-field">
-        <label>eBay最低落札価格</label>
-        <div class="price-input-wrap">
-          <span class="currency">$</span>
+        <label>eBay 最低落札価格 ($)</label>
+        <div class="price-wrap">
+          <span class="sym">$</span>
           <input type="text" id="ebayMin" placeholder="120" oninput="calcAll()">
         </div>
+        <div class="converted-hint" id="minHint"></div>
       </div>
       <div class="price-field">
-        <label>eBay最高落札価格</label>
-        <div class="price-input-wrap">
-          <span class="currency">$</span>
+        <label>eBay 最高落札価格 ($)</label>
+        <div class="price-wrap">
+          <span class="sym">$</span>
           <input type="text" id="ebayMax" placeholder="200" oninput="calcAll()">
         </div>
+        <div class="converted-hint" id="maxHint"></div>
       </div>
       <div class="price-field">
-        <label>狙う出品価格</label>
-        <div class="price-input-wrap">
-          <span class="currency">$</span>
+        <label>狙う出品価格 ($)</label>
+        <div class="price-wrap">
+          <span class="sym">$</span>
           <input type="text" id="targetUSD" placeholder="160" oninput="calcAll()">
         </div>
+        <div class="converted-hint" id="targetHint"></div>
       </div>
       <div class="price-field">
-        <label>梱包重量（g）</label>
-        <div class="price-input-wrap">
-          <span class="currency" style="font-size:10px;left:10px;">g</span>
+        <label>梱包重量 (g)</label>
+        <div class="price-wrap">
+          <span class="sym" style="font-size:11px;left:10px;">g</span>
           <input type="text" id="weightG" placeholder="500" oninput="calcAll()">
         </div>
       </div>
       <div class="price-field">
         <label>送り先</label>
-        <select id="destRegion" onchange="calcAll()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;">
+        <select id="destRegion" onchange="calcAll()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:11px 12px;font-family:var(--sans);font-size:15px;color:var(--text);outline:none;">
           <option value="us">🇺🇸 アメリカ</option>
           <option value="eu">🇪🇺 ヨーロッパ</option>
           <option value="au">🇦🇺 オーストラリア</option>
@@ -664,74 +317,79 @@ main { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
     </button>
   </div>
 
-  <!-- Result Panel -->
+  <!-- 結果 -->
   <div class="result-panel" id="resultPanel">
-    <div class="result-header">
-      <div class="verdict">
-        <span class="verdict-badge" id="verdictBadge">—</span>
-        <span class="verdict-text" id="verdictText">—</span>
+
+    <!-- verdict -->
+    <div class="verdict-bar" id="verdictBar">
+      <div class="verdict-icon" id="verdictIcon">—</div>
+      <div>
+        <div class="verdict-title" id="verdictTitle">—</div>
+        <div class="verdict-sub" id="verdictSub">—</div>
       </div>
-      <span style="font-family:var(--mono);font-size:11px;color:var(--text3);" id="resultItem">—</span>
     </div>
 
+    <!-- metrics -->
     <div class="metrics-grid">
       <div class="metric">
-        <div class="metric-label">NET PROFIT</div>
+        <div class="metric-label">手取り利益</div>
         <div class="metric-value" id="mProfit">—</div>
-        <div class="metric-sub" id="mProfitSub">—</div>
+        <div class="metric-sub" id="mProfitSub"></div>
       </div>
       <div class="metric">
-        <div class="metric-label">ROI</div>
+        <div class="metric-label">ROI（投資対効果）</div>
         <div class="metric-value" id="mROI">—</div>
-        <div class="metric-sub">投資対効果</div>
+        <div class="metric-sub">仕入れに対する利益率</div>
       </div>
       <div class="metric">
-        <div class="metric-label">MARGIN</div>
+        <div class="metric-label">粗利率</div>
         <div class="metric-value" id="mMargin">—</div>
-        <div class="metric-sub">粗利率</div>
+        <div class="metric-sub">売上に対する利益率</div>
       </div>
       <div class="metric">
-        <div class="metric-label">SHIP COST</div>
+        <div class="metric-label">送料（推奨）</div>
         <div class="metric-value" id="mShip">—</div>
-        <div class="metric-sub" id="mShipMethod">—</div>
+        <div class="metric-sub" id="mShipMethod"></div>
       </div>
     </div>
 
-    <div class="breakdown">
-      <div class="panel-title">内訳</div>
-      <div class="breakdown-row"><span class="label">販売価格</span><span class="val" id="bSale">—</span></div>
-      <div class="breakdown-row minus"><span class="label">eBay手数料（13.25%）</span><span class="val" id="bFee">—</span></div>
-      <div class="breakdown-row minus"><span class="label">Payoneer手数料（3%）</span><span class="val" id="bPay">—</span></div>
-      <div class="breakdown-row minus"><span class="label">国際送料</span><span class="val" id="bShip">—</span></div>
-      <div class="breakdown-row minus"><span class="label">仕入れ価格</span><span class="val" id="bCost">—</span></div>
-      <div class="breakdown-row total"><span class="label">手取り利益</span><span class="val" id="bProfit">—</span></div>
+    <!-- breakdown -->
+    <div class="card">
+      <div class="card-label">内訳</div>
+      <div class="breakdown-row"><span class="lbl">販売価格</span><span class="val" id="bSale">—</span></div>
+      <div class="breakdown-row minus"><span class="lbl">eBay手数料（13.25%）</span><span class="val" id="bFee">—</span></div>
+      <div class="breakdown-row minus"><span class="lbl">Payoneer手数料（3%）</span><span class="val" id="bPay">—</span></div>
+      <div class="breakdown-row minus"><span class="lbl">国際送料</span><span class="val" id="bShip">—</span></div>
+      <div class="breakdown-row minus"><span class="lbl">仕入れ価格</span><span class="val" id="bCost">—</span></div>
+      <div class="breakdown-row total"><span class="lbl">手取り利益</span><span class="val" id="bProfit">—</span></div>
     </div>
 
-    <div class="ai-panel">
+    <!-- AI -->
+    <div class="ai-box">
       <div class="ai-label">▸ AI判定コメント</div>
       <div id="aiLoading" class="loading hidden"><div class="spinner"></div>分析中...</div>
       <div id="aiText" class="ai-text"></div>
     </div>
-  </div>
 
+  </div>
 </div>
 
-<!-- ══ HISTORY VIEW ══ -->
+<!-- ══ HISTORY ══ -->
 <div class="view" id="viewHistory">
-  <div class="stats-bar" id="statsBar">
+  <div class="stats-bar">
     <div class="stat-box"><div class="stat-val" id="stTotal">0</div><div class="stat-label">調査件数</div></div>
     <div class="stat-box"><div class="stat-val" id="stBuy">0</div><div class="stat-label">BUY判定</div></div>
     <div class="stat-box"><div class="stat-val" id="stAvgROI">—</div><div class="stat-label">平均ROI</div></div>
-    <div class="stat-box"><div class="stat-val" id="stTotalProfit">—</div><div class="stat-label">合計利益見込み</div></div>
+    <div class="stat-box"><div class="stat-val" id="stTotalProfit">—</div><div class="stat-label">利益合計見込み</div></div>
   </div>
-  <div class="history-grid" id="historyGrid"></div>
+  <div class="history-list" id="historyList"></div>
 </div>
 
-<!-- ══ SUGGEST VIEW ══ -->
+<!-- ══ SUGGEST ══ -->
 <div class="view" id="viewSuggest">
-  <div class="suggest-panel">
-    <div class="panel-title">AI おすすめ仕入れカテゴリ</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">現在のトレンドと利益率をもとにAIが提案します。クリックするとリサーチ画面に移動します。</div>
+  <div class="card">
+    <div class="card-label">💡 AIおすすめ仕入れカテゴリ</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:14px;">トレンドと利益率をもとにAIが提案します。カードをクリックするとリサーチ画面に移動します。</div>
     <button class="btn btn-green" onclick="loadSuggestions()" id="suggestBtn">🤖 AIに提案してもらう</button>
     <div id="suggestLoading" class="loading hidden" style="margin-top:12px;"><div class="spinner"></div>分析中...</div>
     <div class="suggest-grid" id="suggestGrid"></div>
@@ -739,343 +397,363 @@ main { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
 </div>
 
 </main>
-
 <div class="toast" id="toast"></div>
 
 <script>
 // ── DB ──
 let db;
-function openDB() {
-  return new Promise((res, rej) => {
-    const req = indexedDB.open('profitRadarDB', 1);
-    req.onupgradeneeded = e => {
-      e.target.result.createObjectStore('searches', { keyPath: 'id' });
+function openDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('profitRadarDB',2);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('searches'))
+        d.createObjectStore('searches',{keyPath:'id'});
     };
-    req.onsuccess = e => { db = e.target.result; res(); };
-    req.onerror = rej;
+    req.onsuccess=e=>{db=e.target.result;res();};
+    req.onerror=rej;
   });
 }
-function dbPut(item) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction('searches', 'readwrite');
-    tx.objectStore('searches').put(item).onsuccess = () => res();
-    tx.onerror = rej;
-  });
-}
-function dbGetAll() {
-  return new Promise((res, rej) => {
-    const tx = db.transaction('searches', 'readonly');
-    tx.objectStore('searches').getAll().onsuccess = e => res(e.target.result);
-  });
-}
-function dbDelete(id) {
-  return new Promise((res, rej) => {
-    const tx = db.transaction('searches', 'readwrite');
-    tx.objectStore('searches').delete(id).onsuccess = () => res();
-  });
-}
+function dbPut(item){return new Promise((res,rej)=>{const tx=db.transaction('searches','readwrite');tx.objectStore('searches').put(item).onsuccess=()=>res();tx.onerror=rej;});}
+function dbGetAll(){return new Promise((res,rej)=>{const tx=db.transaction('searches','readonly');tx.objectStore('searches').getAll().onsuccess=e=>res(e.target.result);});}
+function dbDelete(id){return new Promise((res,rej)=>{const tx=db.transaction('searches','readwrite');tx.objectStore('searches').delete(id).onsuccess=()=>res();});}
 
 // ── State ──
-let currentCalc = null;
+let currentCalc=null;
+let costCurrency='JPY'; // JPY or USD
 
 // ── View ──
-function showView(v) {
-  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
-  if (v === 'history') renderHistory();
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn'+v.charAt(0).toUpperCase()+v.slice(1)).classList.add('active');
+  if(v==='history') renderHistory();
 }
 
 // ── Search ──
-function doSearch() {
-  const q = document.getElementById('searchInput').value.trim();
-  if (!q) return;
-  const enc = encodeURIComponent(q);
-  document.getElementById('lnkMercari').href = `https://mercari.com/jp/search/?keyword=${enc}&status=on_sale`;
-  document.getElementById('lnkYahoo').href = `https://auctions.yahoo.co.jp/search/search?p=${enc}&va=${enc}&is_postage_mode=1&dest=1&abatch=1`;
-  document.getElementById('lnkEbaySold').href = `https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1&_sop=13`;
-  document.getElementById('lnkEbayActive').href = `https://www.ebay.com/sch/i.html?_nkw=${enc}&_sop=15`;
-  document.getElementById('lnkKeepa').href = `https://keepa.com/#search/1-${enc}`;
-  document.getElementById('linkGrid').style.display = 'grid';
-  document.getElementById('judgeBtn').disabled = false;
+function doSearch(){
+  const q=document.getElementById('searchInput').value.trim();
+  if(!q)return;
+  const enc=encodeURIComponent(q);
+  document.getElementById('lnkMercari').href=`https://mercari.com/jp/search/?keyword=${enc}`;
+  document.getElementById('lnkYahoo').href=`https://auctions.yahoo.co.jp/search/search?p=${enc}`;
+  document.getElementById('lnkEbaySold').href=`https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1&_sop=13`;
+  document.getElementById('lnkEbayActive').href=`https://www.ebay.com/sch/i.html?_nkw=${enc}&_sop=15`;
+  document.getElementById('linkGrid').style.display='grid';
+  document.getElementById('judgeBtn').disabled=false;
   showToast('🔍 各サイトのリンクを生成しました');
 }
 
 // ── Rate ──
-function getRate() { return parseFloat(document.getElementById('fxRate').value) || 155; }
-function updateRate() {
-  document.getElementById('headerRate').textContent = document.getElementById('fxRate').value;
+function getRate(){return parseFloat(document.getElementById('fxRate').value)||155;}
+function onRateChange(){
+  document.getElementById('headerRate').textContent=document.getElementById('fxRate').value;
   calcAll();
 }
-async function fetchRate() {
-  document.getElementById('rateStatus').textContent = '取得中…';
-  try {
-    const res = await fetch('https://open.er-api.com/v6/latest/USD');
-    const data = await res.json();
-    const rate = Math.round(data.rates?.JPY);
-    if (rate) {
-      document.getElementById('fxRate').value = rate;
-      document.getElementById('headerRate').textContent = rate;
-      document.getElementById('rateStatus').textContent = `✅ ${rate}円`;
-      calcAll();
+async function fetchRate(){
+  document.getElementById('rateStatus').textContent='取得中…';
+  try{
+    const res=await fetch('https://open.er-api.com/v6/latest/USD');
+    const data=await res.json();
+    const rate=Math.round(data.rates?.JPY);
+    if(rate){
+      document.getElementById('fxRate').value=rate;
+      document.getElementById('headerRate').textContent=rate;
+      document.getElementById('rateStatus').textContent=`✅ ${rate}円`;
+      onRateChange();
     }
-  } catch { document.getElementById('rateStatus').textContent = '取得失敗'; }
+  }catch{document.getElementById('rateStatus').textContent='取得失敗';}
+}
+
+// ── Currency toggle ──
+function setCurrency(cur){
+  costCurrency=cur;
+  const isJPY=cur==='JPY';
+  document.getElementById('costSym').textContent=isJPY?'¥':'$';
+  document.getElementById('costLabel').textContent=isJPY?'仕入れ価格（日本）':'仕入れ価格（USD）';
+  document.getElementById('costInput').placeholder=isJPY?'15000':'100';
+  document.getElementById('togJPY').classList.toggle('active',isJPY);
+  document.getElementById('togUSD').classList.toggle('active',!isJPY);
+  document.getElementById('costInput').value='';
+  document.getElementById('costHint').textContent='';
+  calcAll();
+}
+
+function getCostJPY(){
+  const val=parseFloat(document.getElementById('costInput').value)||0;
+  const rate=getRate();
+  return costCurrency==='JPY'?val:val*rate;
 }
 
 // ── Shipping ──
-const shipRates = {
-  us: { ems: { base: 1400, rate: 0.0045, label: 'EMS' }, epkt: { base: 900, rate: 0.003, label: 'eパケット' } },
-  eu: { ems: { base: 1600, rate: 0.005, label: 'EMS' }, epkt: { base: 950, rate: 0.0032, label: 'eパケット' } },
-  au: { ems: { base: 1300, rate: 0.004, label: 'EMS' }, epkt: { base: 850, rate: 0.0028, label: 'eパケット' } },
-  asia: { ems: { base: 1000, rate: 0.003, label: 'EMS' }, epkt: { base: 700, rate: 0.0022, label: 'eパケット' } },
+const shipRates={
+  us:{ems:{base:1400,rate:.0045,label:'EMS'},epkt:{base:900,rate:.003,label:'eパケット'}},
+  eu:{ems:{base:1600,rate:.005,label:'EMS'},epkt:{base:950,rate:.0032,label:'eパケット'}},
+  au:{ems:{base:1300,rate:.004,label:'EMS'},epkt:{base:850,rate:.0028,label:'eパケット'}},
+  asia:{ems:{base:1000,rate:.003,label:'EMS'},epkt:{base:700,rate:.0022,label:'eパケット'}},
 };
-function calcShip(weightG, region) {
-  const w = parseInt(weightG) || 400;
-  const r = shipRates[region] || shipRates.us;
-  const ems = Math.round(r.ems.base + r.ems.rate * w);
-  const epkt = Math.round(r.epkt.base + r.epkt.rate * w);
-  return { ems, epkt, recommended: w > 1000 ? ems : epkt, label: w > 1000 ? r.ems.label : r.epkt.label };
+function calcShip(w,region){
+  const r=shipRates[region]||shipRates.us;
+  const ems=Math.round(r.ems.base+r.ems.rate*w);
+  const epkt=Math.round(r.epkt.base+r.epkt.rate*w);
+  return w>1000?{cost:ems,label:r.ems.label}:{cost:epkt,label:r.epkt.label};
 }
 
 // ── Calc ──
-function calcAll() {
-  const rate = getRate();
-  const cost = parseFloat(document.getElementById('costJPY').value) || 0;
-  const target = parseFloat(document.getElementById('targetUSD').value) || 0;
-  const weight = document.getElementById('weightG').value;
-  const region = document.getElementById('destRegion').value;
+function calcAll(){
+  const rate=getRate();
+  const cost=getCostJPY();
+  const target=parseFloat(document.getElementById('targetUSD').value)||0;
+  const ebayMin=parseFloat(document.getElementById('ebayMin').value)||0;
+  const ebayMax=parseFloat(document.getElementById('ebayMax').value)||0;
+  const weight=parseInt(document.getElementById('weightG').value)||400;
+  const region=document.getElementById('destRegion').value;
 
-  if (!cost || !target) { currentCalc = null; return; }
+  // 換算ヒント更新
+  const inputVal=parseFloat(document.getElementById('costInput').value)||0;
+  if(inputVal){
+    document.getElementById('costHint').textContent=costCurrency==='JPY'
+      ?`→ $${(inputVal/rate).toFixed(2)} USD`
+      :`→ ¥${Math.round(inputVal*rate).toLocaleString()} 円`;
+  }
+  if(ebayMin) document.getElementById('minHint').textContent=`→ ¥${Math.round(ebayMin*rate).toLocaleString()}`;
+  if(ebayMax) document.getElementById('maxHint').textContent=`→ ¥${Math.round(ebayMax*rate).toLocaleString()}`;
+  if(target)  document.getElementById('targetHint').textContent=`→ ¥${Math.round(target*rate).toLocaleString()}`;
 
-  const saleJPY = target * rate;
-  const fee = saleJPY * 0.1325;
-  const payFee = saleJPY * 0.03;
-  const ship = calcShip(weight, region);
-  const shipCost = ship.recommended;
-  const profit = saleJPY - fee - payFee - shipCost - cost;
-  const roi = cost > 0 ? (profit / cost * 100) : 0;
-  const margin = saleJPY > 0 ? (profit / saleJPY * 100) : 0;
+  if(!cost||!target){currentCalc=null;return;}
 
-  currentCalc = { cost, target, saleJPY, fee, payFee, shipCost, ship, profit, roi, margin, rate };
+  const saleJPY=target*rate;
+  const fee=saleJPY*.1325;
+  const payFee=saleJPY*.03;
+  const ship=calcShip(weight,region);
+  const profit=saleJPY-fee-payFee-ship.cost-cost;
+  const roi=cost>0?profit/cost*100:0;
+  const margin=saleJPY>0?profit/saleJPY*100:0;
 
-  // Update result panel
+  currentCalc={cost,target,saleJPY,fee,payFee,ship,profit,roi,margin,rate,ebayMin,ebayMax,weight,region};
+
+  // Show result
   document.getElementById('resultPanel').classList.add('show');
-  const item = document.getElementById('searchInput').value || '—';
-  document.getElementById('resultItem').textContent = item;
 
   // Verdict
-  let verdict, vClass;
-  if (roi >= 50 && profit > 0) { verdict = '✅ BUY'; vClass = 'verdict-buy'; }
-  else if (roi >= 20 && profit > 0) { verdict = '⚠️ CAUTION'; vClass = 'verdict-caution'; }
-  else { verdict = '❌ PASS'; vClass = 'verdict-pass'; }
-  const vBadge = document.getElementById('verdictBadge');
-  vBadge.textContent = verdict;
-  vBadge.className = 'verdict-badge ' + vClass;
-  document.getElementById('verdictText').textContent =
-    roi >= 50 ? `ROI ${roi.toFixed(0)}% — 仕入れを推奨します` :
-    roi >= 20 ? `ROI ${roi.toFixed(0)}% — 慎重に判断してください` :
-    `ROI ${roi.toFixed(0)}% — 利益が薄いです`;
+  const vBar=document.getElementById('verdictBar');
+  vBar.className='verdict-bar '+(roi>=50?'buy':roi>=20?'caution':'pass');
+  document.getElementById('verdictIcon').textContent=roi>=50?'✅':roi>=20?'⚠️':'❌';
+  document.getElementById('verdictTitle').textContent=roi>=50?'BUY — 仕入れを推奨':roi>=20?'CAUTION — 慎重に判断':'PASS — 利益が薄い';
+  document.getElementById('verdictSub').textContent=`ROI ${roi.toFixed(0)}% ・ 利益 ¥${Math.round(profit).toLocaleString()} ・ 粗利率 ${margin.toFixed(0)}%`;
 
   // Metrics
-  const pEl = document.getElementById('mProfit');
-  pEl.textContent = `¥${Math.round(profit).toLocaleString()}`;
-  pEl.className = 'metric-value ' + (profit > 0 ? 'green' : 'red');
-  document.getElementById('mProfitSub').textContent = `$${target} → ¥${Math.round(saleJPY).toLocaleString()}`;
+  const pEl=document.getElementById('mProfit');
+  pEl.textContent=`¥${Math.round(profit).toLocaleString()}`;
+  pEl.className='metric-value '+(profit>0?'green':'red');
+  document.getElementById('mProfitSub').textContent=`$${target} → ¥${Math.round(saleJPY).toLocaleString()}`;
 
-  const rEl = document.getElementById('mROI');
-  rEl.textContent = `${roi.toFixed(0)}%`;
-  rEl.className = 'metric-value ' + (roi >= 50 ? 'green' : roi >= 20 ? 'yellow' : 'red');
+  const rEl=document.getElementById('mROI');
+  rEl.textContent=`${roi.toFixed(0)}%`;
+  rEl.className='metric-value '+(roi>=50?'green':roi>=20?'yellow':'red');
 
-  const mgEl = document.getElementById('mMargin');
-  mgEl.textContent = `${margin.toFixed(0)}%`;
-  mgEl.className = 'metric-value ' + (margin >= 30 ? 'green' : margin >= 15 ? 'yellow' : 'red');
+  const mgEl=document.getElementById('mMargin');
+  mgEl.textContent=`${margin.toFixed(0)}%`;
+  mgEl.className='metric-value '+(margin>=30?'green':margin>=15?'yellow':'red');
 
-  document.getElementById('mShip').textContent = `¥${shipCost.toLocaleString()}`;
-  document.getElementById('mShipMethod').textContent = ship.label;
+  document.getElementById('mShip').textContent=`¥${ship.cost.toLocaleString()}`;
+  document.getElementById('mShipMethod').textContent=ship.label;
 
   // Breakdown
-  document.getElementById('bSale').textContent = `$${target} / ¥${Math.round(saleJPY).toLocaleString()}`;
-  document.getElementById('bFee').textContent = `-¥${Math.round(fee).toLocaleString()}`;
-  document.getElementById('bPay').textContent = `-¥${Math.round(payFee).toLocaleString()}`;
-  document.getElementById('bShip').textContent = `-¥${shipCost.toLocaleString()}`;
-  document.getElementById('bCost').textContent = `-¥${cost.toLocaleString()}`;
-  const bpEl = document.getElementById('bProfit');
-  bpEl.textContent = `¥${Math.round(profit).toLocaleString()}`;
-  bpEl.style.color = profit > 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('bSale').textContent=`$${target} (¥${Math.round(saleJPY).toLocaleString()})`;
+  document.getElementById('bFee').textContent=`-¥${Math.round(fee).toLocaleString()}`;
+  document.getElementById('bPay').textContent=`-¥${Math.round(payFee).toLocaleString()}`;
+  document.getElementById('bShip').textContent=`-¥${ship.cost.toLocaleString()}`;
+  document.getElementById('bCost').textContent=`-¥${Math.round(cost).toLocaleString()}`;
+  const bpEl=document.getElementById('bProfit');
+  bpEl.textContent=`¥${Math.round(profit).toLocaleString()}`;
+  bpEl.style.color=profit>0?'var(--green)':'var(--red)';
 }
 
-// ── AI Judge ── 
-async function judgeAndSave() {
-  if (!currentCalc) { calcAll(); if (!currentCalc) { showToast('❌ 価格を入力してください'); return; } }
+// ── AI Judge ──
+async function judgeAndSave(){
+  if(!currentCalc){calcAll();if(!currentCalc){showToast('❌ 価格を入力してください');return;}}
+  const item=document.getElementById('searchInput').value||'商品';
+  const {cost,target,profit,roi,margin,ship,ebayMin,ebayMax}=currentCalc;
 
-  const item = document.getElementById('searchInput').value || '商品';
-  const { cost, target, profit, roi, margin, shipCost, ship } = currentCalc;
-  const ebayMin = document.getElementById('ebayMin').value;
-  const ebayMax = document.getElementById('ebayMax').value;
-
-  document.getElementById('aiText').textContent = '';
+  document.getElementById('aiText').textContent='';
   document.getElementById('aiLoading').classList.remove('hidden');
-  document.getElementById('resultPanel').classList.add('show');
 
-  try {
-    const res = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: 'あなたはeBay輸出転売の専門家です。簡潔で実践的なアドバイスを日本語で返してください。',
-        messages: [{
-          role: 'user',
-          content: `以下の仕入れ案件を分析してください。
-
+  try{
+    const res=await fetch('/api/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:1000,
+        system:'eBay輸出転売の専門家。簡潔で実践的なアドバイスを日本語で。',
+        messages:[{role:'user',content:`案件分析：
 商品: ${item}
-仕入れ価格: ¥${cost.toLocaleString()}
-eBay落札相場: $${ebayMin}〜$${ebayMax}
-出品予定価格: $${target}
+仕入れ: ¥${Math.round(cost).toLocaleString()}
+eBay相場: $${ebayMin}〜$${ebayMax}
+出品価格: $${target}
 利益: ¥${Math.round(profit).toLocaleString()}
 ROI: ${roi.toFixed(0)}%
 粗利率: ${margin.toFixed(0)}%
-送料: ¥${shipCost.toLocaleString()}（${ship.label}）
+送料: ¥${ship.cost.toLocaleString()}（${ship.label}）
 
-以下の観点で100〜150文字程度で判定してください：
-1. この案件の総合評価（BUY/CAUTION/PASSとその理由）
-2. リスクや注意点
-3. 価格交渉や利益改善のヒント（あれば）`
-        }]
+100〜150文字で：①総合評価 ②リスク ③改善ヒント`}]
       })
     });
-    const data = await res.json();
-    const text = data.content[0].text;
-    document.getElementById('aiText').textContent = text;
+    const data=await res.json();
+    const text=data.content[0].text;
+    document.getElementById('aiText').textContent=text;
 
-    // Save to DB
     await dbPut({
-      id: Date.now().toString(),
+      id:Date.now().toString(),
       item,
-      cost,
+      cost:Math.round(cost),
+      costCurrency,
       target,
-      profit: Math.round(profit),
-      roi: parseFloat(roi.toFixed(1)),
-      margin: parseFloat(margin.toFixed(1)),
-      verdict: roi >= 50 ? 'buy' : roi >= 20 ? 'caution' : 'pass',
-      aiComment: text,
-      savedAt: new Date().toISOString(),
+      ebayMin,ebayMax,
+      profit:Math.round(profit),
+      roi:parseFloat(roi.toFixed(1)),
+      margin:parseFloat(margin.toFixed(1)),
+      shipCost:ship.cost,
+      shipLabel:ship.label,
+      verdict:roi>=50?'buy':roi>=20?'caution':'pass',
+      aiComment:text,
+      savedAt:new Date().toISOString(),
     });
     showToast('💾 履歴に保存しました');
-  } catch(e) {
-    document.getElementById('aiText').textContent = 'AI判定に失敗しました。計算結果をご確認ください。';
+  }catch(e){
+    document.getElementById('aiText').textContent='AI判定に失敗しました。計算結果をご確認ください。';
   }
   document.getElementById('aiLoading').classList.add('hidden');
 }
 
 // ── History ──
-async function renderHistory() {
-  const items = await dbGetAll();
-  items.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+async function renderHistory(){
+  const items=await dbGetAll();
+  items.sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
 
-  // Stats
-  document.getElementById('stTotal').textContent = items.length;
-  const buys = items.filter(i => i.verdict === 'buy');
-  document.getElementById('stBuy').textContent = buys.length;
-  const avgROI = items.length ? (items.reduce((s, i) => s + i.roi, 0) / items.length).toFixed(0) : '—';
-  document.getElementById('stAvgROI').textContent = items.length ? avgROI + '%' : '—';
-  const totalProfit = items.reduce((s, i) => s + (i.profit || 0), 0);
-  document.getElementById('stTotalProfit').textContent = items.length ? '¥' + totalProfit.toLocaleString() : '—';
+  document.getElementById('stTotal').textContent=items.length;
+  const buys=items.filter(i=>i.verdict==='buy');
+  document.getElementById('stBuy').textContent=buys.length;
+  const avgROI=items.length?(items.reduce((s,i)=>s+i.roi,0)/items.length).toFixed(0)+'%':'—';
+  document.getElementById('stAvgROI').textContent=avgROI;
+  const total=items.reduce((s,i)=>s+(i.profit||0),0);
+  document.getElementById('stTotalProfit').textContent=items.length?'¥'+total.toLocaleString():'—';
 
-  const grid = document.getElementById('historyGrid');
-  if (!items.length) {
-    grid.innerHTML = `<div class="history-empty"><div class="history-empty-icon">📭</div>まだ履歴がありません<br><span style="font-size:11px;">リサーチタブで商品を検索してください</span></div>`;
+  const list=document.getElementById('historyList');
+  if(!items.length){
+    list.innerHTML=`<div class="history-empty"><div class="history-empty-icon">📭</div>まだ履歴がありません<br><span style="font-size:13px;color:var(--text3);">リサーチタブで商品を検索してください</span></div>`;
     return;
   }
-  grid.innerHTML = items.map(item => `
-    <div class="history-card ${item.verdict}" onclick="loadFromHistory('${item.id}')">
-      <div style="flex:1;">
-        <div class="history-name">${item.item}</div>
-        <div class="history-meta">仕入 ¥${item.cost?.toLocaleString()} → $${item.target} ・ ${new Date(item.savedAt).toLocaleDateString('ja-JP')}</div>
+
+  const tagClass={buy:'tag-buy',caution:'tag-caution',pass:'tag-pass'};
+  const tagLabel={buy:'✅ BUY',caution:'⚠️ CAUTION',pass:'❌ PASS'};
+
+  list.innerHTML=items.map(item=>{
+    const date=new Date(item.savedAt).toLocaleDateString('ja-JP');
+    const costStr=item.costCurrency==='USD'?`$${item.cost}`:`¥${item.cost?.toLocaleString()}`;
+    return `
+    <div class="hcard ${item.verdict}" id="hcard-${item.id}" onclick="toggleCard('${item.id}')">
+      <div class="hcard-top">
+        <div class="hcard-main">
+          <span class="verdict-tag ${tagClass[item.verdict]}">${tagLabel[item.verdict]}</span>
+          <div class="hcard-name">${item.item}</div>
+          <div class="hcard-meta">仕入 ${costStr} → 出品 $${item.target} ・ ${date}</div>
+        </div>
+        <div class="hcard-right">
+          <div class="hcard-profit ${item.profit>0?'green':'red'}">¥${item.profit?.toLocaleString()}</div>
+          <div class="hcard-roi">ROI ${item.roi}%</div>
+        </div>
+        <button class="del-btn" onclick="event.stopPropagation();deleteHistory('${item.id}')">🗑</button>
       </div>
-      <div>
-        <div class="history-profit ${item.profit > 0 ? 'green' : 'red'}">¥${item.profit?.toLocaleString()}</div>
-        <div class="history-roi">ROI ${item.roi}%</div>
+      <div class="hcard-body">
+        <div class="hcard-breakdown">
+          <div class="hb-item"><div class="hb-label">eBay相場</div><div class="hb-val">$${item.ebayMin||'—'}〜$${item.ebayMax||'—'}</div></div>
+          <div class="hb-item"><div class="hb-label">粗利率</div><div class="hb-val">${item.margin}%</div></div>
+          <div class="hb-item"><div class="hb-label">送料</div><div class="hb-val">¥${item.shipCost?.toLocaleString()} (${item.shipLabel||'—'})</div></div>
+        </div>
+        ${item.aiComment?`<div style="margin-top:12px;padding:12px 14px;background:var(--green-faint);border-radius:8px;font-size:14px;line-height:1.7;color:var(--text2);">🤖 ${item.aiComment}</div>`:''}
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();loadFromHistory('${item.id}')">↩ 再リサーチ</button>
+        </div>
       </div>
-      <button class="del-btn" onclick="event.stopPropagation();deleteHistory('${item.id}')">🗑</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-async function loadFromHistory(id) {
-  const items = await dbGetAll();
-  const item = items.find(i => i.id === id);
-  if (!item) return;
-  document.getElementById('searchInput').value = item.item;
-  document.getElementById('costJPY').value = item.cost;
-  document.getElementById('targetUSD').value = item.target;
+function toggleCard(id){
+  document.getElementById('hcard-'+id)?.classList.toggle('open');
+}
+
+async function loadFromHistory(id){
+  const items=await dbGetAll();
+  const item=items.find(i=>i.id===id);
+  if(!item)return;
+  document.getElementById('searchInput').value=item.item;
+  if(item.costCurrency==='USD') setCurrency('USD');
+  else setCurrency('JPY');
+  document.getElementById('costInput').value=item.cost;
+  document.getElementById('ebayMin').value=item.ebayMin||'';
+  document.getElementById('ebayMax').value=item.ebayMax||'';
+  document.getElementById('targetUSD').value=item.target;
   doSearch();
   calcAll();
   showView('search');
 }
 
-async function deleteHistory(id) {
+async function deleteHistory(id){
   await dbDelete(id);
   renderHistory();
   showToast('🗑 削除しました');
 }
 
-// ── Suggestions ──
-async function loadSuggestions() {
+// ── Suggest ──
+async function loadSuggestions(){
   document.getElementById('suggestLoading').classList.remove('hidden');
-  document.getElementById('suggestGrid').innerHTML = '';
-  document.getElementById('suggestBtn').disabled = true;
-
-  try {
-    const res = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: 'eBay輸出転売の専門家です。JSONのみ返答。マークダウン不要。',
-        messages: [{
-          role: 'user',
-          content: `今の市場で日本からeBayへの輸出転売で利益が出やすい商品カテゴリを6つ提案してください。
-以下のJSONのみ返答してください：
-{"suggestions":[{"name":"商品名・カテゴリ","keyword":"eBay検索キーワード（英語）","reason":"おすすめ理由（日本語40文字以内）","roi_estimate":"ROI目安（例：60-120%）","risk":"low/medium/high"}]}`
-        }]
+  document.getElementById('suggestGrid').innerHTML='';
+  document.getElementById('suggestBtn').disabled=true;
+  try{
+    const res=await fetch('/api/claude',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:1000,
+        system:'eBay輸出転売の専門家。JSONのみ返答。マークダウン不要。',
+        messages:[{role:'user',content:`日本からeBay輸出で今おすすめの商品カテゴリを6つ提案。
+JSONのみ返答：{"suggestions":[{"name":"商品名","keyword":"eBay英語キーワード","reason":"理由40文字以内","roi_estimate":"ROI目安","risk":"low/medium/high"}]}`}]
       })
     });
-    const data = await res.json();
-    const parsed = JSON.parse(data.content[0].text.replace(/```json|```/g, '').trim());
-    const riskLabel = { low: '🟢 低リスク', medium: '🟡 中リスク', high: '🔴 高リスク' };
-    document.getElementById('suggestGrid').innerHTML = parsed.suggestions.map(s => `
+    const data=await res.json();
+    const parsed=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    const riskLabel={low:'🟢 低リスク',medium:'🟡 中リスク',high:'🔴 高リスク'};
+    document.getElementById('suggestGrid').innerHTML=parsed.suggestions.map(s=>`
       <div class="suggest-card" onclick="applySuggest('${s.keyword.replace(/'/g,"\\'")}')">
         <div class="suggest-name">${s.name}</div>
         <div class="suggest-reason">${s.reason}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
           <span class="suggest-roi">ROI ${s.roi_estimate}</span>
-          <span style="font-size:11px;color:var(--text3);">${riskLabel[s.risk] || ''}</span>
+          <span style="font-size:12px;color:var(--text3);">${riskLabel[s.risk]||''}</span>
         </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    document.getElementById('suggestGrid').innerHTML = '<div style="color:var(--text3);font-size:13px;padding:16px;">提案の取得に失敗しました。</div>';
+      </div>`).join('');
+  }catch(e){
+    document.getElementById('suggestGrid').innerHTML='<div style="color:var(--text3);padding:16px;font-size:14px;">提案の取得に失敗しました。</div>';
   }
   document.getElementById('suggestLoading').classList.add('hidden');
-  document.getElementById('suggestBtn').disabled = false;
+  document.getElementById('suggestBtn').disabled=false;
 }
 
-function applySuggest(keyword) {
-  document.getElementById('searchInput').value = keyword;
+function applySuggest(keyword){
+  document.getElementById('searchInput').value=keyword;
   doSearch();
   showView('search');
 }
 
 // ── Toast ──
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  setTimeout(()=>t.classList.remove('show'),3000);
 }
 
 // ── Init ──
