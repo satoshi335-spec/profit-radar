@@ -225,6 +225,19 @@ main{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
       <button class="btn btn-outline" onclick="saveResearch()" style="padding:10px 18px;font-size:14px;">💾 リサーチ保存</button>
     </div>
 
+    <!-- 英語キーワード表示 -->
+    <div id="engKeywordBox" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 16px;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:6px;font-family:var(--mono);">🌐 eBay検索キーワード（英語に翻訳済み）</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:17px;font-weight:700;color:var(--green);font-family:var(--mono);" id="engKeywordText">—</span>
+        <button class="btn btn-outline" style="padding:5px 12px;font-size:13px;" onclick="editEngKeyword()">✏️ 修正</button>
+      </div>
+      <input type="text" id="engKeywordEdit" class="search-input" style="display:none;margin-top:8px;font-size:15px;"
+        placeholder="英語キーワードを修正できます"
+        onkeydown="if(event.key==='Enter')applyEngKeyword()">
+    </div>
+    <div id="engLoading" class="loading hidden" style="margin-top:10px;"><div class="spinner"></div>日本語を英語に翻訳中…</div>
+
     <div class="link-grid" id="linkGrid" style="display:none;">
       <a id="lnkMercari" href="#" target="_blank" class="market-link">
         <span style="font-size:20px;">🛒</span>
@@ -466,17 +479,77 @@ function showView(v){
 }
 
 // ── Search ──
-function doSearch(){
+// 英語キーワードを保持
+let currentEngKeyword = '';
+
+async function doSearch(){
   const q=document.getElementById('searchInput').value.trim();
   if(!q)return;
-  const enc=encodeURIComponent(q);
-  document.getElementById('lnkMercari').href=`https://mercari.com/jp/search/?keyword=${enc}`;
-  document.getElementById('lnkYahoo').href=`https://auctions.yahoo.co.jp/search/search?p=${enc}`;
-  document.getElementById('lnkEbaySold').href=`https://www.ebay.com/sch/i.html?_nkw=${enc}&LH_Sold=1&LH_Complete=1&_sop=13`;
-  document.getElementById('lnkEbayActive').href=`https://www.ebay.com/sch/i.html?_nkw=${enc}&_sop=15`;
+
+  // メルカリ・ヤフオクは日本語でOK
+  const encJP=encodeURIComponent(q);
+  document.getElementById('lnkMercari').href=`https://mercari.com/jp/search/?keyword=${encJP}`;
+  document.getElementById('lnkYahoo').href=`https://auctions.yahoo.co.jp/search/search?p=${encJP}`;
   document.getElementById('linkGrid').style.display='grid';
   document.getElementById('judgeBtn').disabled=false;
-  showToast('🔍 各サイトのリンクを生成しました');
+
+  // 日本語かどうか判定
+  const hasJapanese = /[　-鿿＀-￯]/.test(q);
+
+  if(hasJapanese){
+    // 英語に翻訳してからeBay検索
+    document.getElementById('engLoading').classList.remove('hidden');
+    document.getElementById('engKeywordBox').style.display='none';
+    try{
+      const res = await fetch('/api/claude',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-6', max_tokens:100,
+          system:'You are an eBay search keyword translator. Respond with ONLY the English keyword, nothing else. No explanation, no punctuation.',
+          messages:[{role:'user',content:`Translate this Japanese product name to an optimal eBay search keyword in English (3-6 words max): "${q}"`}]
+        })
+      });
+      const data = await res.json();
+      currentEngKeyword = data.content[0].text.trim().replace(/["""]/g,'');
+    } catch(e){
+      // 翻訳失敗時はそのまま使う
+      currentEngKeyword = q;
+    }
+    document.getElementById('engLoading').classList.add('hidden');
+  } else {
+    currentEngKeyword = q;
+  }
+
+  // eBayは英語キーワードで検索
+  applyEngKeyword();
+  showToast('🔍 リンクを生成しました'+(hasJapanese?' (eBayは英語に翻訳済み)':''));
+}
+
+function applyEngKeyword(){
+  const kw = document.getElementById('engKeywordEdit').style.display!=='none'
+    ? document.getElementById('engKeywordEdit').value.trim() || currentEngKeyword
+    : currentEngKeyword;
+  currentEngKeyword = kw;
+  const encEN = encodeURIComponent(kw);
+  document.getElementById('lnkEbaySold').href=`https://www.ebay.com/sch/i.html?_nkw=${encEN}&LH_Sold=1&LH_Complete=1&_sop=13`;
+  document.getElementById('lnkEbayActive').href=`https://www.ebay.com/sch/i.html?_nkw=${encEN}&_sop=15`;
+  document.getElementById('engKeywordText').textContent = kw;
+  document.getElementById('engKeywordBox').style.display='block';
+  document.getElementById('engKeywordEdit').style.display='none';
+}
+
+function editEngKeyword(){
+  const editEl = document.getElementById('engKeywordEdit');
+  const isEditing = editEl.style.display !== 'none';
+  if(isEditing){
+    applyEngKeyword();
+  } else {
+    editEl.value = currentEngKeyword;
+    editEl.style.display='block';
+    editEl.focus();
+    event.target.textContent='✅ 確定';
+  }
 }
 
 // ── Rate ──
